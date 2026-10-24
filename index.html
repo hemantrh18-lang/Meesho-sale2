@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#7b2cbf">
+  <title>Meesho Sale — Big savings, everyday finds</title>
+  <meta name="description" content="Shop everyday finds at special sale prices.">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="top-strip">MEGA SALE • Extra savings on everyday finds</div>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="Meesho Sale home"><span class="brand-mark">m</span><span>Meesho<span class="brand-sale">Sale</span></span></a>
+    <div class="search-wrap"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search for products, brands and more" aria-label="Search products"><button id="searchClear" aria-label="Clear search">×</button></div>
+    <div class="header-actions">
+      <button id="adminOpen" class="text-btn" type="button">Admin</button>
+      <button id="cartOpen" class="cart-button" type="button"><span aria-hidden="true">🛍</span> Cart <b id="cartCount">0</b></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="sale-ribbon">
+      <div><span class="live-dot"></span><strong>LIVE SALE</strong><span class="sale-sub">ENDS IN</span></div>
+      <div class="timer" id="saleTimer" aria-live="polite">10:00</div>
+      <span class="sale-note">Fresh deals • Limited-time offers</span>
+    </section>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">THE EVERYDAY SALE</p>
+        <h1>Good finds.<br><span>Happy prices.</span></h1>
+        <p>Little upgrades, lovely gifts and daily essentials — all in one place.</p>
+        <a class="primary-button" href="#products">Shop the sale <span>→</span></a>
+        <div class="trust-row"><span>✓ Easy browsing</span><span>✓ Secure checkout setup-ready</span></div>
+      </div>
+      <div class="hero-art" aria-label="Illustration of shopping bags">
+        <div class="sun-shape"></div><div class="art-card card-one">NEW<br><b>FINDS</b></div>
+        <div class="shopping-bag bag-back"></div><div class="shopping-bag bag-front"><span>m</span></div>
+        <div class="sparkle sparkle-one">✦</div><div class="sparkle sparkle-two">✧</div>
+        <div class="price-sticker">FROM<br><b>₹149</b></div>
+      </div>
+    </section>
+
+    <section class="benefits" aria-label="Shopping highlights">
+      <div><span class="benefit-icon">♡</span><span><b>Sale prices</b><small>Easy-on-pocket picks</small></span></div>
+      <div><span class="benefit-icon">↗</span><span><b>Browse with ease</b><small>Search & filter products</small></span></div>
+      <div><span class="benefit-icon">₹</span><span><b>Online checkout</b><small>Payment integration required</small></span></div>
+    </section>
+
+    <section class="shop-section" id="products">
+      <div class="section-heading">
+        <div><p class="eyebrow">HANDPICKED FOR YOU</p><h2>Shop popular picks</h2></div>
+        <span id="resultCount" class="result-count">8 products</span>
+      </div>
+      <nav class="category-chips" id="categoryChips" aria-label="Product categories">
+        <button class="chip active" data-category="All">All products</button>
+        <button class="chip" data-category="Fashion">Fashion</button>
+        <button class="chip" data-category="Home">Home</button>
+        <button class="chip" data-category="Beauty">Beauty</button>
+        <button class="chip" data-category="Accessories">Accessories</button>
+      </nav>
+      <div class="product-grid" id="productGrid"></div>
+      <div id="emptyState" class="empty-state" hidden><div>⌕</div><h3>No products found</h3><p>Try a different search or category.</p><button id="resetFilters" class="outline-button">Show all products</button></div>
+    </section>
+
+    <section class="bottom-promo"><div><p class="eyebrow">A LITTLE TREAT FOR YOU</p><h2>Find your next favourite.</h2><p>Explore the sale and discover something lovely today.</p></div><a href="#products" class="light-button">Explore products →</a></section>
+  </main>
+
+  <footer><a class="brand footer-brand" href="#"><span class="brand-mark">m</span><span>Meesho<span class="brand-sale">Sale</span></span></a><p>Independent demo storefront. Not affiliated with or endorsed by Meesho.</p><p>© <span id="year"></span> Meesho-Sale Demo</p></footer>
+
+  <div class="overlay" id="cartOverlay" hidden>
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+      <div class="drawer-head"><div><p class="eyebrow">YOUR BAG</p><h2 id="cartTitle">Shopping cart</h2></div><button class="icon-close" data-close="cartOverlay" aria-label="Close cart">×</button></div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="cart-footer"><div class="total-line"><span>Subtotal</span><strong id="cartSubtotal">₹0</strong></div><p class="fine-print">Shipping and final charges are confirmed during a real checkout.</p><button id="checkoutOpen" class="primary-button full-width">Continue to checkout →</button><button class="outline-button full-width" data-close="cartOverlay">Continue shopping</button></div>
+    </aside>
+  </div>
+
+  <div class="overlay" id="checkoutOverlay" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+      <div class="drawer-head"><div><p class="eyebrow">ALMOST THERE</p><h2 id="checkoutTitle">Checkout demo</h2></div><button class="icon-close" data-close="checkoutOverlay" aria-label="Close checkout">×</button></div>
+      <div class="notice"><b>Demo checkout only</b><br>This starter site does not collect payments or submit real orders. Connect a payment gateway and secure backend before taking customer payments.</div>
+      <form id="checkoutForm">
+        <label>Full name<input name="name" autocomplete="name" required placeholder="Enter your name"></label>
+        <label>Mobile number<input name="phone" inputmode="tel" pattern="[0-9]{10}" maxlength="10" required placeholder="10-digit mobile number"></label>
+        <label>Delivery address<textarea name="address" autocomplete="street-address" required rows="3" placeholder="House / street / area / city / PIN"></textarea></label>
+        <fieldset><legend>Payment method</legend><label class="payment-option"><input type="radio" name="payment" value="UPI" checked> <span><b>UPI / Online payment</b><small>Gateway integration required</small></span></label><label class="payment-option disabled-option"><input type="radio" disabled> <span><b>Cash on Delivery</b><small>Unavailable</small></span><em>Not available</em></label></fieldset>
+        <button class="primary-button full-width" type="submit">Preview order details</button>
+      </form>
+      <div id="checkoutResult" class="checkout-result" hidden></div>
+    </section>
+  </div>
+
+  <div class="overlay" id="adminOverlay" hidden>
+    <section class="modal admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <div class="drawer-head"><div><p class="eyebrow">STORE TOOLS</p><h2 id="adminTitle">Demo admin panel</h2></div><button class="icon-close" data-close="adminOverlay" aria-label="Close admin">×</button></div>
+      <div class="notice warning"><b>Demo only:</b> this panel stores changes in this browser only. It has no login security and is not a production admin system.</div>
+      <form id="adminForm">
+        <label>Admin demo PIN<input name="pin" inputmode="numeric" required placeholder="Enter demo PIN"></label>
+        <p class="fine-print">Demo PIN: <b>2468</b>. Do not use this for a live store.</p>
+        <button class="primary-button full-width" type="submit">Open admin tools</button>
+      </form>
+      <div id="adminTools" hidden>
+        <div class="admin-stats"><div><small>Products</small><b id="adminProductCount">0</b></div><div><small>Cart items</small><b id="adminCartCount">0</b></div></div>
+        <h3>Add a product</h3>
+        <form id="addProductForm">
+          <label>Product name<input name="title" required maxlength="60" placeholder="e.g. Everyday tote bag"></label>
+          <div class="form-two"><label>Price (₹)<select name="price"><option>149</option><option>199</option><option>249</option><option>299</option></select></label><label>Category<select name="category"><option>Fashion</option><option>Home</option><option>Beauty</option><option>Accessories</option></select></label></div>
+          <label>Emoji for product<input name="emoji" maxlength="4" placeholder="👜" value="🛍"></label>
+          <button class="primary-button full-width" type="submit">Add product</button>
+        </form>
+        <button id="resetDemo" class="outline-button full-width reset-button" type="button">Reset demo products</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
