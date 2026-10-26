@@ -751,3 +751,4 @@ function renderCart() {
   });
 
   $('year').textContent = new Date().getFullYear();
+  })();
