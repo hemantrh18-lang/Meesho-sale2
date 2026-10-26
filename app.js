@@ -42,20 +42,33 @@
       (p.title.toLowerCase().includes(searchTerm) || p.category.toLowerCase().includes(searchTerm)));
     $("resultCount").textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
     $("emptyState").hidden = list.length !== 0;
+    
     $("productGrid").innerHTML = list.map(p => `
       <article class="product-card">
         <div class="product-visual" style="--product-bg:${esc(p.bg || "#f6eaff")};position:relative;overflow:hidden">
-  <img
-    src="${esc(p.image || "")}"
-    alt="${esc(p.title)}"
-    loading="lazy"
-    style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"
-    onerror="this.style.display='none'"
-  >
-  <span class="product-tag" style="position:relative">${esc(p.tag || "SALE PICK")}</span>
-  <button class="heart-button" type="button" data-favourite="${p.id}" aria-label="Favourite" style="position:relative">♡</button>
-</div>
-      </article>`).join("");
+          <img
+            src="${esc(p.image || "")}"
+            alt="${esc(p.title)}"
+            loading="lazy"
+            style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"
+            onerror="this.style.display='none'"
+          >
+          <span class="product-tag" style="position:relative">${esc(p.tag || "SALE PICK")}</span>
+          <button class="heart-button" type="button" data-favourite="${p.id}" aria-label="Favourite" style="position:relative">♡</button>
+        </div>
+        <div class="product-info" style="padding:12px">
+          <h3 style="margin:0 0 8px;font-size:15px;color:#222">${esc(p.title)}</h3>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <strong style="font-size:18px;color:#222">${money(p.price)}</strong>
+            <del style="font-size:13px;color:#888">${money(p.oldPrice || p.price * 2)}</del>
+          </div>
+          <button type="button" data-add="${p.id}" style="width:100%;padding:10px;background:#9f2089;color:white;border:0;border-radius:6px;font-weight:600">
+            Add to Cart
+          </button>
+        </div>
+      </article>
+    `).join("");
+
   }
   function renderCart() {
     const entries = Object.entries(cart).filter(([id, qty]) => productById(id) && qty > 0);
