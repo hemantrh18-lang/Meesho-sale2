@@ -259,8 +259,10 @@ function renderCart() {
     `;
 
   $('checkoutOpen').disabled = !count;
-  $('adminCount').textContent = products.length;
-}
+      $('adminCount').textContent = products.length;
+    setupPriceEditor();
+    setupOrderHistory();
+    renderPriceEditorOptions();
 
   // ADD PRICE EDITOR TO THE EXISTING ADMIN PANEL
   // No index.html changes are needed for this section.
@@ -749,8 +751,3 @@ function renderCart() {
   });
 
   $('year').textContent = new Date().getFullYear();
-
-      setupPriceEditor();
-    setupOrderHistory();
-    renderPriceEditorOptions();
-})();
