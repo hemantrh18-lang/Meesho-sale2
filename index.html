@@ -6,7 +6,261 @@
   <meta name="theme-color" content="#9f2089">
   <title>Meesho Sale | Everyday finds</title>
   <link rel="stylesheet" href="./style.css">
-</head>
+</head> 
+  
+<!-- MEESHO SALE: PRODUCT SIZE + DESCRIPTION + ADD PRODUCT -->
+
+<style>
+.product-details {
+  margin-top: 10px;
+  font-size: 14px;
+}
+.size-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.size-btn {
+  padding: 8px 13px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.size-btn.selected {
+  border: 2px solid #9f2089;
+  color: #9f2089;
+  font-weight: bold;
+}
+.product-description {
+  color: #555;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+.admin-product-form {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 16px;
+  margin: 20px 0;
+  border-radius: 10px;
+}
+.admin-product-form input,
+.admin-product-form textarea,
+.admin-product-form select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 8px 0;
+  padding: 11px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+.add-product-btn {
+  background: #9f2089;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>
+
+<section class="admin-product-form">
+  <h2>Add New Product</h2>
+
+  <form id="newProductForm">
+    <input id="productName" placeholder="Product name" required>
+
+    <input id="productPrice" type="number"
+      min="1" placeholder="Price (₹)" required>
+
+    <input id="productImage" type="url"
+      placeholder="Product image URL">
+
+    <select id="productCategory">
+      <option value="Women">Women</option>
+      <option value="Men">Men</option>
+      <option value="Kids">Kids</option>
+    </select>
+
+    <label>Available sizes:</label>
+    <div>
+      <label><input type="checkbox" name="productSize" value="XS"> XS</label>
+      <label><input type="checkbox" name="productSize" value="S"> S</label>
+      <label><input type="checkbox" name="productSize" value="M"> M</label>
+      <label><input type="checkbox" name="productSize" value="L"> L</label>
+      <label><input type="checkbox" name="productSize" value="XL"> XL</label>
+      <label><input type="checkbox" name="productSize" value="XXL"> XXL</label>
+      <label><input type="checkbox" name="productSize" value="Free Size"> Free Size</label>
+    </div>
+
+    <textarea id="productDescription"
+      placeholder="Product description: fabric, colour, fitting, etc."
+      rows="4" required></textarea>
+
+    <button class="add-product-btn" type="submit">
+      Add Product
+    </button>
+  </form>
+</section>
+
+<section>
+  <h2>Our Products</h2>
+  <div id="newProductsList"></div>
+</section>
+
+<script>
+(function () {
+  const storageKey = "meeshoSaleExtraProducts";
+
+  let products = [];
+
+  try {
+    products = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    if (!Array.isArray(products)) products = [];
+  } catch (e) {
+    products = [];
+  }
+
+  const list = document.getElementById("newProductsList");
+  const form = document.getElementById("newProductForm");
+
+  function renderProducts() {
+    list.replaceChildren();
+
+    products.forEach(function (product) {
+      const card = document.createElement("article");
+      card.className = "product-details";
+
+      if (product.image) {
+        const image = document.createElement("img");
+        image.src = product.image;
+        image.alt = product.name;
+        image.style.width = "160px";
+        image.style.maxWidth = "100%";
+        image.style.display = "block";
+        image.onerror = function () { image.hidden = true; };
+        card.appendChild(image);
+      }
+
+      const title = document.createElement("h3");
+      title.textContent = product.name;
+      card.appendChild(title);
+
+      const price = document.createElement("strong");
+      price.textContent = "₹" + product.price;
+      card.appendChild(price);
+
+      const description = document.createElement("p");
+      description.className = "product-description";
+      description.textContent = product.description;
+      card.appendChild(description);
+
+      const sizeLabel = document.createElement("p");
+      sizeLabel.textContent = "Select Size:";
+      card.appendChild(sizeLabel);
+
+      const sizeOptions = document.createElement("div");
+      sizeOptions.className = "size-options";
+
+      let selectedSize = "";
+
+      (product.sizes.length ? product.sizes : ["Free Size"])
+        .forEach(function (size) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "size-btn";
+          button.textContent = size;
+
+          button.addEventListener("click", function () {
+            selectedSize = size;
+
+            sizeOptions.querySelectorAll("button")
+              .forEach(function (item) {
+                item.classList.remove("selected");
+              });
+
+            button.classList.add("selected");
+          });
+
+          sizeOptions.appendChild(button);
+        });
+
+      card.appendChild(sizeOptions);
+
+      const addToCart = document.createElement("button");
+      addToCart.type = "button";
+      addToCart.className = "add-product-btn";
+      addToCart.textContent = "Add to Cart";
+
+      addToCart.addEventListener("click", function () {
+        if (!selectedSize) {
+          alert("Please select a size first.");
+          return;
+        }
+
+        // Connect this to your existing cart system
+        // if the website already has one.
+        const cart = JSON.parse(
+          localStorage.getItem("meeshoSaleExtraCart") || "[]"
+        );
+
+        cart.push({
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          size: selectedSize,
+          quantity: 1
+        });
+
+        localStorage.setItem("meeshoSaleExtraCart",
+          JSON.stringify(cart));
+
+        alert(product.name + " (" + selectedSize +
+          ") added to cart.");
+      });
+
+      card.appendChild(addToCart);
+      list.appendChild(card);
+    });
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const sizes = Array.from(
+      form.querySelectorAll('input[name="productSize"]:checked')
+    ).map(function (checkbox) {
+      return checkbox.value;
+    });
+
+    products.push({
+      id: Date.now(),
+      name: document.getElementById("productName").value.trim(),
+      price: Number(document.getElementById("productPrice").value),
+      image: document.getElementById("productImage").value.trim(),
+      category: document.getElementById("productCategory").value,
+      sizes: sizes,
+      description: document.getElementById("productDescription").value.trim()
+    });
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(products));
+    } catch (error) {
+      products.pop();
+      alert("Storage full or unavailable. Product save nahi hua.");
+      return;
+    }
+
+    form.reset();
+    renderProducts();
+    alert("Product added successfully!");
+  });
+
+  renderProducts();
+})();
+</script>
 <body>
   <div class="top">
     MEGA SALE · Extra savings on everyday finds
