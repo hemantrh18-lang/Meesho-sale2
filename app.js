@@ -129,7 +129,19 @@
     e.preventDefault(); const data = new FormData(e.currentTarget);
     const id = Date.now();
     const price = Number(data.get("price"));
-    products.unshift({id,title:String(data.get("title")).trim(),category:String(data.get("category")),price,oldPrice:price*2,emoji:String(data.get("emoji") || "🛍️").trim(),bg:"#f1e3ff",tag:"NEW ARRIVAL"});
+    
+products.unshift({
+  id,
+  title: String(data.get("title")).trim(),
+  category: String(data.get("category")),
+  price,
+  oldPrice: price * 2,
+  emoji: String(data.get("emoji") || "🛍️").trim(),
+  image: String(data.get("image") || "").trim(),
+  bg: "#f1e3ff",
+  tag: "NEW ARRIVAL"
+});
+
     persist(); renderProducts(); $("adminProductCount").textContent = products.length; e.currentTarget.reset(); e.currentTarget.elements.emoji.value = "🛍️"; toast("Product added in this browser");
   });
   $("resetDemo").addEventListener("click", () => {
