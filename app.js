@@ -46,18 +46,34 @@
     $("productGrid").innerHTML = list.map(p => `
       <article class="product-card">
         <div class="product-visual" style="--product-bg:${esc(p.bg || "#f6eaff")};position:relative;overflow:hidden">
-          <img
-            src="${esc(p.image || "")}"
-            alt="${esc(p.title)}"
-            loading="lazy"
-            style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"
-            onerror="this.style.display='none'"
-          >
-          <span class="product-tag" style="position:relative">${esc(p.tag || "SALE PICK")}</span>
+          
+<a
+  href="product.html?id=${encodeURIComponent(p.id)}&amp;title=${encodeURIComponent(p.title)}&amp;price=${encodeURIComponent(p.price)}&amp;oldPrice=${encodeURIComponent(p.oldPrice || p.price * 2)}&amp;image=${encodeURIComponent(p.image || "")}&amp;category=${encodeURIComponent(p.category)}&amp;tag=${encodeURIComponent(p.tag || "SALE PICK")}"
+  style="display:block;position:absolute;inset:0;z-index:1"
+>
+  <img
+    src="${esc(p.image || "")}"
+    alt="${esc(p.title)}"
+    loading="lazy"
+    style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"
+    onerror="this.style.display='none'"
+  >
+</a>
+
+          <span class="product-tag" style="position:relative;pointer-events:none">
+  ${esc(p.tag || "SALE PICK")}
+</span>
           <button class="heart-button" type="button" data-favourite="${p.id}" aria-label="Favourite" style="position:relative">♡</button>
         </div>
         <div class="product-info" style="padding:12px">
-          <h3 style="margin:0 0 8px;font-size:15px;color:#222">${esc(p.title)}</h3>
+          
+<h3 style="margin:0 0 8px;font-size:15px;color:#222">
+  <a
+    href="product.html?id=${encodeURIComponent(p.id)}&amp;title=${encodeURIComponent(p.title)}&amp;price=${encodeURIComponent(p.price)}&amp;oldPrice=${encodeURIComponent(p.oldPrice || p.price * 2)}&amp;image=${encodeURIComponent(p.image || "")}&amp;category=${encodeURIComponent(p.category)}&amp;tag=${encodeURIComponent(p.tag || "SALE PICK")}"
+    style="color:inherit;text-decoration:none"
+  >${esc(p.title)}</a>
+</h3>
+
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
             <strong style="font-size:18px;color:#222">${money(p.price)}</strong>
             <del style="font-size:13px;color:#888">${money(p.oldPrice || p.price * 2)}</del>
