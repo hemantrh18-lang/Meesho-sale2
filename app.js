@@ -507,11 +507,12 @@ function renderCart() {
     open('cartOverlay');
   });
 
-  // CHECKOUT PREVIEW
+   // CHECKOUT: DEMO ORDER PLACEMENT
   $('checkoutOpen').addEventListener('click', () => {
     if (Number($('count').textContent) === 0) return;
 
     close('cartOverlay');
+    $('checkoutResult').hidden = true;
     open('checkoutOverlay');
   });
 
@@ -519,35 +520,95 @@ function renderCart() {
     event.preventDefault();
 
     const data = new FormData(event.currentTarget);
+    const name = String(data.get('name') || '').trim();
+    const phone = String(data.get('phone') || '').trim();
+    const address = String(data.get('address') || '').trim();
 
-    const lines = Object.entries(cart).map(([key, quantity]) => {
-  const { id, size } = getCartInfo(key);
+    if (!name || !phone || !address) {
+      notify('Please complete all delivery details');
+      return;
+    }
 
-  const product = products.find(
-    item => String(item.id) === id
-  );
+    const entries = Object.entries(cart)
+      .filter(([key, qty]) => {
+        const { id } = getCartInfo(key);
+        return products.some(p => String(p.id) === id) &&
+          Number(qty) > 0;
+      });
 
-  if (!product || Number(quantity) <= 0) return '';
+    if (!entries.length) {
+      notify('Your cart is empty');
+      return;
+    }
 
-  return `${product.title}${size ? ` (Size: ${size})` : ''} × ${quantity}`;
-}).filter(Boolean).join(', ');
+    const items = entries.map(([key, qty]) => {
+      const { id, size } = getCartInfo(key);
+      const product = products.find(
+        p => String(p.id) === id
+      );
+
+      return {
+        productId: product.id,
+        title: product.title,
+        price: Number(product.price),
+        quantity: Number(qty),
+        size: size || ''
+      };
+    });
+
+    const total = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    const orderId =
+      'MS' + Date.now().toString().slice(-10);
+
+    // Demo order history: saved only in this browser.
+    const orderKey = 'msSaleDemoOrdersV1';
+    const previousOrders = parse(
+      localStorage.getItem(orderKey), []
+    );
+
+    const orders = Array.isArray(previousOrders)
+      ? previousOrders : [];
+
+    orders.push({
+      orderId,
+      items,
+      total,
+      status: 'Demo order placed',
+      createdAt: new Date().toISOString()
+    });
+
+    localStorage.setItem(orderKey, JSON.stringify(orders));
 
     $('checkoutResult').hidden = false;
-
     $('checkoutResult').innerHTML = `
-      <div class="notice">
-        <b>Order preview — not a real order</b><br>
-        Name: ${esc(data.get('name'))}<br>
-        Mobile: ${esc(data.get('phone'))}<br>
-        Address: ${esc(data.get('address'))}<br>
-        Items: ${esc(lines)}<br>
-        Total: ${$('subtotal').textContent}<br><br>
-        Cash on Delivery is unavailable in this demo.
-        No order was submitted and no payment was taken.
+      <div class="notice" role="status">
+        <h3>Demo Order Confirmed!</h3>
+        <p>Order ID: <b>${esc(orderId)}</b></p>
+        <p>Name: ${esc(name)}</p>
+        <p>Mobile: ${esc(phone)}</p>
+        <p>Address: ${esc(address)}</p>
+        <p><b>Items</b></p>
+        <ul>
+          ${items.map(item => `
+            <li>
+              ${esc(item.title)}
+              ${item.size ? '(Size: ' + esc(item.size) + ')' : ''}
+              × ${item.quantity} — ${money(item.price * item.quantity)}
+            </li>
+          `).join('')}
+        </ul>
+        <p><b>Total: ${money(total)}</b></p>
+        <p>COD unavailable. No payment was taken.</p>
+        <p>This is a browser-only demo. The seller has not received this order.</p>
       </div>
     `;
-  });
 
+    notify('Demo order created');
+  });
   // ADMIN LOGIN
   $('adminOpen').addEventListener('click', () => {
     $('adminTools').hidden = true;
