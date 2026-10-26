@@ -1,335 +1,324 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meesho Clone - Online Shopping Platform</title>
-    <!-- Google Fonts & FontAwesome for Icons -->
-    <link href="https://googleapis.com" rel="stylesheet">
-    <link rel="stylesheet" href="https://cloudflare.com">
-    
-    <style>
-        /* --- Core Reset & Variables --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Roboto', sans-serif;
-        }
-        :root {
-            --meesho-pink: #f43397;
-            --text-dark: #353543;
-            --text-light: #666666;
-            --border-gray: #e7e7ec;
-            --bg-light: #f9f9f9;
-        }
-        body {
-            background-color: #fff;
-            color: var(--text-dark);
-        }
-
-        /* --- Header / Navigation Bar --- */
-        header {
-            position: sticky;
-            top: 0;
-            background: #fff;
-            z-index: 1000;
-            border-bottom: 1px solid var(--border-gray);
-        }
-        .top-navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 12px 20px;
-        }
-        .nav-left {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-            flex: 1;
-        }
-        .logo {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--meesho-pink);
-            text-decoration: none;
-            font-family: 'Mier B', sans-serif;
-        }
-        .search-container {
-            position: relative;
-            width: 60%;
-            max-width: 600px;
-        }
-        .search-container i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-light);
-        }
-        .search-container input {
-            width: 100%;
-            padding: 12px 12px 12px 45px;
-            border: 1px solid var(--text-light);
-            border-radius: 4px;
-            font-size: 14px;
-            outline: none;
-            color: var(--text-dark);
-        }
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 35px;
-        }
-        .nav-item-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .nav-item-link:hover {
-            color: var(--meesho-pink);
-        }
-        .profile-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 13px;
-            gap: 4px;
-        }
-        .profile-btn i {
-            font-size: 18px;
-        }
-
-        /* --- Secondary Category Navbar --- */
-        .category-navbar {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            padding: 14px 20px;
-            list-style: none;
-            border-bottom: 1px solid var(--border-gray);
-            overflow-x: auto;
-        }
-        .category-navbar li {
-            font-size: 15px;
-            color: var(--text-dark);
-            cursor: pointer;
-            white-space: nowrap;
-            padding: 0 10px;
-            position: relative;
-        }
-        .category-navbar li:hover {
-            color: var(--meesho-pink);
-        }
-        .category-navbar li:hover::after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background-color: var(--meesho-pink);
-        }
-
-        /* --- Main Banner Promo --- */
-        .promo-container {
-            max-width: 1200px;
-            margin: 35px auto;
-            padding: 0 20px;
-        }
-        .hero-banner {
-            background-color: var(--bg-light);
-            display: flex;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-gray);
-        }
-        .hero-text {
-            flex: 1;
-            padding: 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .hero-text h1 {
-            font-size: 42px;
-            font-weight: 700;
-            line-height: 52px;
-            margin-bottom: 20px;
-        }
-        .hero-text p {
-            font-size: 18px;
-            color: var(--text-light);
-            margin-bottom: 30px;
-        }
-        .hero-img {
-            flex: 1;
-            background: #fde8e9;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            min-height: 320px;
-        }
-        .hero-img i {
-            font-size: 200px;
-            color: var(--meesho-pink);
-            opacity: 0.8;
-            padding-bottom: 20px;
-        }
-
-        /* --- Product Grid Section --- */
-        .main-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .section-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 25px;
-        }
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 25px;
-        }
-        .product-card {
-            border: 1px solid var(--border-gray);
-            border-radius: 8px;
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-            background: #fff;
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .product-image-placeholder {
-            height: 240px;
-            background-color: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ccc;
-            font-size: 48px;
-        }
-        .product-details {
-            padding: 12px;
-        }
-        .product-name {
-            font-size: 14px;
-            color: var(--text-light);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 6px;
-        }
-        .price-row {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .current-price {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-dark);
-        }
-        .original-price {
-            font-size: 12px;
-            text-decoration: line-through;
-            color: var(--text-light);
-        }
-        .discount-tag {
-            color: #038d63;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .delivery-tag {
-            background-color: var(--bg-light);
-            padding: 4px 8px;
-            font-size: 11px;
-            border-radius: 20px;
-            display: inline-block;
-            color: var(--text-light);
-            margin-bottom: 8px;
-        }
-        .rating-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .rating-badge {
-            background-color: #038d63;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-
-        /* Responsive Breakpoints */
-        @media (max-width: 768px) {
-            .top-navbar { flex-direction: column; gap: 15px; }
-            .search-container { width: 100%; }
-            .hero-banner { flex-direction: column; }
-            .hero-img { display: none; }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#9f2089">
+  <title>Meesho Sale | Everyday finds</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
-<body>
 
-    <!-- Header Block -->
-    <header>
-        <div class="top-navbar">
-            <div class="nav-left">
-                <a href="#" class="logo">meesho</a>
-                <div class="search-container">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Try Saree, Kurti or Search by Product Code">
-                </div>
-            </div>
-            <div class="nav-right">
-                <a href="#" class="nav-item-link"><i class="fa-solid fa-mobile-screen-button"></i> Download App</a>
-                <a href="#" class="nav-item-link">Become a Supplier</a>
-                <div class="nav-item-link profile-btn" id="loginBtn">
-                    <i class="fa-regular fa-user"></i>
-                    <span>Profile</span>
-                </div>
-                <div class="nav-item-link profile-btn">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <span>Cart</span>
-                </div>
-            </div>
+<body>
+  <div class="top">
+    MEGA SALE · Extra savings on everyday finds
+  </div>
+
+  <header>
+    <a class="brand" href="./">
+      <b>m</b> Meesho<span>Sale</span>
+    </a>
+
+    <div class="search">
+      <span>⌕</span>
+      <input
+        id="search"
+        type="search"
+        placeholder="Search sarees, kurtis, fashion and more"
+        aria-label="Search products"
+      >
+      <button id="clear" type="button" aria-label="Clear search">×</button>
+    </div>
+
+    <button id="adminOpen" class="plain" type="button">Admin</button>
+
+    <button id="cartOpen" class="cart" type="button">
+      🛍 Cart <b id="count">0</b>
+    </button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <small>THE EVERYDAY SALE</small>
+        <h1>Good finds.<br><em>Happy prices.</em></h1>
+
+        <p>
+          Fashion, home essentials and little things you'll love
+          — at easy-on-pocket prices.
+        </p>
+
+        <a class="primary" href="#shop">Shop the sale →</a>
+
+        <p class="ticks">
+          ✓ Budget-friendly picks　 ✓ Easy browsing
+        </p>
+      </div>
+
+      <div class="heroart">
+        <div class="sticker">
+          SALE<br>
+          <b>UP TO 50%</b><br>
+          OFF*
         </div>
 
-        <!-- Navigation Row Items -->
-        <ul class="category-navbar">
-            <li>Women Ethnic</li>
-            <li>Women Western</li>
-            <li>Men</li>
-            <li>Kids</li>
-            <li>Home & Kitchen</li>
-            <li>Beauty & Health</li>
-            <li>Jewellery & Accessories</li>
-            <li>Bags & Footwear</li>
-            <li>Electronics</li>
-        </ul>
-    </header>
+        <div class="art a">👗<small>Everyday style</small></div>
+        <div class="art b">👜<small>Little joys</small></div>
+        <div class="art c">🏡<small>Lovely home</small></div>
+      </div>
+    </section>
 
-    <!-- Marketing / Promotion Area -->
-    <section class="promo-container">
-        <div class="hero-banner">
-            <div class="hero-text">
-                <h1>Lowest Prices<br>Best Quality Shopping</h1>
+    <section class="benefits">
+      <div>
+        ♡ <b>Prices you'll love</b>
+        <small>Affordable everyday finds</small>
+      </div>
+
+      <div>
+        ⌕ <b>Easy discovery</b>
+        <small>Search and shop categories</small>
+      </div>
+
+      <div>
+        🛍 <b>Shopping bag</b>
+        <small>Manage your cart</small>
+      </div>
+    </section>
+
+    <section id="shop" class="shop">
+      <div class="heading">
+        <div>
+          <small>HANDPICKED FOR YOU</small>
+          <h2>Shop popular picks</h2>
+        </div>
+
+        <span id="resultCount">12 products</span>
+      </div>
+
+      <nav id="categories" aria-label="Product categories">
+        <button class="active" data-cat="All" type="button">All products</button>
+        <button data-cat="Women" type="button">Women</button>
+        <button data-cat="Men" type="button">Men</button>
+        <button data-cat="Kids" type="button">Kids</button>
+        <button data-cat="Beauty" type="button">Beauty</button>
+        <button data-cat="Home" type="button">Home &amp; Living</button>
+        <button data-cat="Kitchen" type="button">Kitchen</button>
+        <button data-cat="Accessories" type="button">Accessories</button>
+      </nav>
+
+      <div class="tools">
+        <span>Fresh deals for your everyday needs</span>
+
+        <label>
+          Sort
+          <select id="sort">
+            <option value="featured">Recommended</option>
+            <option value="low">Price: Low to high</option>
+            <option value="high">Price: High to low</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="products" class="grid"></div>
+
+      <div id="empty" hidden class="empty">
+        <h3>No products found</h3>
+        <p>Try another search or category.</p>
+        <button id="reset" type="button">Show all products</button>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div>
+        <small>A LITTLE TREAT FOR YOU</small>
+        <h2>Find your next favourite.</h2>
+        <p>Explore affordable picks for your wardrobe and home.</p>
+      </div>
+
+      <a class="primary" href="#shop">Explore products →</a>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand" href="./">
+      <b>m</b> Meesho<span>Sale</span>
+    </a>
+
+    <p>
+      Independent demo storefront. Not affiliated with or endorsed by Meesho.
+    </p>
+
+    <small>
+      © <span id="year"></span> Meesho Sale Demo · Checkout is not live
+    </small>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Shopping cart -->
+  <div id="cartOverlay" class="overlay" hidden>
+    <section class="panel">
+      <div class="panelhead">
+        <div>
+          <small>YOUR BAG</small>
+          <h2>Shopping cart</h2>
+        </div>
+
+        <button data-close="cartOverlay" type="button" aria-label="Close cart">×</button>
+      </div>
+
+      <div id="cartItems"></div>
+
+      <div class="bottom">
+        <p class="subtotal">
+          Subtotal <b id="subtotal">₹0</b>
+        </p>
+
+        <p class="muted">
+          Demo checkout only. No payment is taken.
+        </p>
+
+        <button id="checkoutOpen" class="primary full" type="button">
+          Continue to checkout →
+        </button>
+
+        <button data-close="cartOverlay" class="plain full" type="button">
+          Continue shopping
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Checkout demo -->
+  <div id="checkoutOverlay" class="overlay" hidden>
+    <section class="modal">
+      <div class="panelhead">
+        <div>
+          <small>ALMOST THERE</small>
+          <h2>Checkout demo</h2>
+        </div>
+
+        <button data-close="checkoutOverlay" type="button" aria-label="Close checkout">×</button>
+      </div>
+
+      <div class="notice">
+        This website does not take payments or send real orders.
+      </div>
+
+      <form id="checkoutForm">
+        <label>
+          Full name
+          <input name="name" autocomplete="name" required>
+        </label>
+
+        <label>
+          Mobile number
+          <input
+            name="phone"
+            type="tel"
+            pattern="[0-9]{10}"
+            inputmode="numeric"
+            placeholder="10-digit mobile number"
+            required
+          >
+        </label>
+
+        <label>
+          Delivery address
+          <textarea name="address" autocomplete="street-address" required></textarea>
+        </label>
+
+        <p>
+          Payment method: Online payment not enabled ·
+          <b>Cash on Delivery unavailable</b>
+        </p>
+
+        <button class="primary full" type="submit">Preview order</button>
+      </form>
+
+      <div id="checkoutResult" hidden></div>
+    </section>
+  </div>
+
+  <!-- Demo admin panel -->
+  <div id="adminOverlay" class="overlay" hidden>
+    <section class="modal">
+      <div class="panelhead">
+        <div>
+          <small>STORE TOOLS</small>
+          <h2>Demo admin panel</h2>
+        </div>
+
+        <button data-close="adminOverlay" type="button" aria-label="Close admin">×</button>
+      </div>
+
+      <div class="notice">
+        Demo only: changes are saved in this browser, not shared with visitors.
+        The demo PIN is not secure for a live store.
+      </div>
+
+      <form id="adminForm">
+        <label>
+          Demo PIN
+          <input
+            name="pin"
+            type="password"
+            required
+            placeholder="Demo PIN: 2468"
+          >
+        </label>
+
+        <button class="primary full" type="submit">Open admin tools</button>
+      </form>
+
+      <div id="adminTools" hidden>
+        <p>Products: <b id="adminCount">12</b></p>
+
+        <h3>Add product</h3>
+
+        <form id="addForm">
+          <label>
+            Product name
+            <input name="title" required>
+          </label>
+
+          <label>
+            Price
+            <select name="price">
+              <option>149</option>
+              <option selected>199</option>
+              <option>249</option>
+              <option>299</option>
+            </select>
+          </label>
+
+          <label>
+            Category
+            <select name="category">
+              <option>Women</option>
+              <option>Men</option>
+              <option>Kids</option>
+              <option>Beauty</option>
+              <option>Home</option>
+              <option>Kitchen</option>
+              <option>Accessories</option>
+            </select>
+          </label>
+
+          <label>
+            Image URL (optional)
+            <input name="image" type="url" placeholder="https://...">
+          </label>
+
+          <button class="primary full" type="submit">Add product</button>
+        </form>
+
+        <button id="resetDemo" class="danger full" type="button">
+          Reset demo products
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
