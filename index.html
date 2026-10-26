@@ -105,7 +105,11 @@
         <div class="admin-stats"><div><small>Products</small><b id="adminProductCount">0</b></div><div><small>Cart items</small><b id="adminCartCount">0</b></div></div>
         <h3>Add a product</h3>
         <form id="addProductForm">
-          <label>Product name<input name="title" required maxlength="60" placeholder="e.g. Everyday tote bag"></label>
+          
+<label>Product photo URL
+  <input name="image" type="url" placeholder="https://example.com/product.jpg">
+</label>
+
           <div class="form-two"><label>Price (₹)<select name="price"><option>149</option><option>199</option><option>249</option><option>299</option></select></label><label>Category<select name="category"><option>Fashion</option><option>Home</option><option>Beauty</option><option>Accessories</option></select></label></div>
           <label>Emoji for product<input name="emoji" maxlength="4" placeholder="👜" value="🛍"></label>
           <button class="primary-button full-width" type="submit">Add product</button>
