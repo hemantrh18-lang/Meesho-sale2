@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product Details | Meesho Sale</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:#f7f7f7;color:#222}
+    header{background:#9f2089;color:white;padding:16px;font-size:21px;font-weight:bold}
+    main{max-width:850px;margin:20px auto;padding:16px;background:white;border-radius:12px}
+    img{display:block;width:100%;max-height:480px;object-fit:contain;background:#f8f1f8;border-radius:10px}
+    h1{font-size:23px;margin:20px 0 10px}
+    .price{font-size:25px;font-weight:bold}
+    del{color:#888;font-size:17px;margin-left:8px}
+    .category{color:#666;margin:12px 0}
+    button{width:100%;padding:14px;border:0;border-radius:8px;background:#9f2089;color:white;font-size:17px;font-weight:bold;margin-top:18px}
+    .back{display:inline-block;margin:0 0 15px;color:#9f2089;text-decoration:none}
+    #message{color:#16803c}
+  </style>
+</head>
+<body>
+  <header>Meesho Sale</header>
+  <main>
+    <a class="back" href="./">← Back to shopping</a>
+    <img id="photo" alt="Product photo">
+    <h1 id="title">Product</h1>
+    <div>
+      <span class="price" id="price"></span>
+      <del id="oldPrice"></del>
+    </div>
+    <p class="category" id="category"></p>
+    <p id="tag"></p>
+    <button id="add">Add to Cart</button>
+    <p id="message"></p>
+    <a class="back" href="./">Continue shopping</a>
+  </main>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const id = q.get("id");
+    const title = q.get("title") || "Product";
+    const price = Number(q.get("price")) || 0;
+    const oldPrice = Number(q.get("oldPrice")) || price * 2;
+    const image = q.get("image") || "";
+    const category = q.get("category") || "";
+    const tag = q.get("tag") || "";
+
+    document.title = title + " | Meesho Sale";
+    document.getElementById("title").textContent = title;
+    document.getElementById("price").textContent =
+      "₹" + price.toLocaleString("en-IN");
+    document.getElementById("oldPrice").textContent =
+      "₹" + oldPrice.toLocaleString("en-IN");
+    document.getElementById("category").textContent = "Category: " + category;
+    document.getElementById("tag").textContent = tag;
+    document.getElementById("photo").src = image;
+    document.getElementById("photo").onerror = function() {
+      this.style.display = "none";
+    };
+
+    document.getElementById("add").addEventListener("click", function() {
+      if (!id || !price) {
+        document.getElementById("message").textContent =
+          "Product details are unavailable. Please return to shopping.";
+        return;
+      }
+      let cart = {};
+      try {
+        cart = JSON.parse(localStorage.getItem("meeshoSaleDemoCartV1")) || {};
+      } catch (e) {
+        cart = {};
+      }
+      cart[id] = (Number(cart[id]) || 0) + 1;
+      localStorage.setItem("meeshoSaleDemoCartV1", JSON.stringify(cart));
+      document.getElementById("message").textContent =
+        "Added to cart! Go back to shopping to view your cart.";
+    });
+  </script>
+</body>
+</html>
