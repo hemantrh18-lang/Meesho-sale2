@@ -2,8 +2,11 @@
 (() => {
   'use strict';
 
-  const KEY = 'msSaleProductsV3';
-  const CART = 'msSaleCartV3';
+  const PRODUCT_KEY = 'msSaleProductsV3';
+  const CART_KEY = 'msSaleCartV3';
+  const ORDER_KEY = 'msSaleDemoOrdersV1';
+
+  const $ = id => document.getElementById(id);
 
   const defaults = [
     [1, "Women's Printed Kurti", "Women", 199, 399, "BESTSELLER", "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=650&q=80"],
@@ -22,129 +25,103 @@
     id, title, category, price, oldPrice, tag, image
   }));
 
-  const $ = id => document.getElementById(id);
-
-  const parse = (value, fallback) => {
+  function read(key, fallback) {
     try {
-      return JSON.parse(value) ?? fallback;
-    } catch {
+      const value = JSON.parse(localStorage.getItem(key));
+      return value == null ? fallback : value;
+    } catch (_) {
       return fallback;
     }
-  };
-
-  const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[char]));
-
-  const money = value =>
-    '₹' + Number(value || 0).toLocaleString('en-IN');
-
-  let products = parse(localStorage.getItem(KEY), null);
-
-  if (!Array.isArray(products) || !products.length) {
-    products = defaults.map(product => ({ ...product }));
-    localStorage.setItem(KEY, JSON.stringify(products));
   }
 
-  const SIZES = 'msSaleCartSizesV3';
-const SIZE_MARK = '__SIZE__';
-
-let cart = parse(localStorage.getItem(CART), {});
-
-if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
-  cart = {};
-}
-
-// Purane cart ko naye size-aware format mein migrate karo.
-const oldSizes = parse(localStorage.getItem(SIZES), {});
-
-if (oldSizes && typeof oldSizes === 'object' && !Array.isArray(oldSizes)) {
-  Object.entries(oldSizes).forEach(([id, size]) => {
-    const oldQty = Number(cart[id]) || 0;
-
-    if (oldQty > 0 && size) {
-      const newKey = `${id}${SIZE_MARK}${size}`;
-      cart[newKey] = (Number(cart[newKey]) || 0) + oldQty;
-      delete cart[id];
+  function write(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (_) {
+      notify('Browser storage unavailable');
     }
-  });
-
-  localStorage.removeItem(SIZES);
-  localStorage.setItem(CART, JSON.stringify(cart));
-}
-
-function getCartInfo(key) {
-  const text = String(key);
-  const position = text.lastIndexOf(SIZE_MARK);
-
-  if (position === -1) {
-    return { id: text, size: '' };
   }
 
-  return {
-    id: text.slice(0, position),
-    size: text.slice(position + SIZE_MARK.length)
-  };
-}
+  function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+  }
+
+  function money(value) {
+    return '₹' + Number(value || 0).toLocaleString('en-IN');
+  }
+
+  let products = read(PRODUCT_KEY, null);
+  if (!Array.isArray(products) || !products.length) {
+    products = defaults.map(p => ({ ...p }));
+    write(PRODUCT_KEY, products);
+  }
+
+  let cart = read(CART_KEY, {});
+  if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
+    cart = {};
+  }
 
   let category = 'All';
   let query = '';
   let toastTimer;
 
-  function save() {
-    localStorage.setItem(KEY, JSON.stringify(products));
-    localStorage.setItem(CART, JSON.stringify(cart));
-  }
-
   function notify(message) {
-    $('toast').textContent = message;
-    $('toast').classList.add('show');
+    const toast = $('toast');
+    if (!toast) return;
 
+    toast.textContent = message;
+    toast.classList.add('show');
     clearTimeout(toastTimer);
 
-    toastTimer = setTimeout(
-      () => $('toast').classList.remove('show'),
-      2200
-    );
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2200);
   }
 
   function open(id) {
-    $(id).hidden = false;
+    if ($(id)) $(id).hidden = false;
   }
 
   function close(id) {
-    $(id).hidden = true;
+    if ($(id)) $(id).hidden = true;
   }
 
-  // PRODUCT LIST
-  function render() {
-    let list = products.filter(product =>
-      (category === 'All' || product.category === category) &&
-      (`${product.title} ${product.category}`)
-        .toLowerCase()
-        .includes(query)
+  function save() {
+    write(PRODUCT_KEY, products);
+    write(CART_KEY, cart);
+  }
+
+  function renderProducts() {
+    let list = products.filter(p =>
+      (category === 'All' || p.category === category) &&
+      `${p.title} ${p.category}`.toLowerCase().includes(query)
     );
 
-    if ($('sort').value === 'low') {
+    if ($('sort')?.value === 'low') {
       list.sort((a, b) => Number(a.price) - Number(b.price));
     }
 
-    if ($('sort').value === 'high') {
+    if ($('sort')?.value === 'high') {
       list.sort((a, b) => Number(b.price) - Number(a.price));
     }
 
-    $('resultCount').textContent =
-      list.length + ' product' + (list.length === 1 ? '' : 's');
+    if ($('resultCount')) {
+      $('resultCount').textContent =
+        `${list.length} product${list.length === 1 ? '' : 's'}`;
+    }
 
-    $('empty').hidden = list.length > 0;
+    if ($('empty')) $('empty').hidden = list.length > 0;
+    if (!$('products')) return;
 
-    $('products').innerHTML = list.map(product => {
-      const price = Number(product.price) || 0;
-      const oldPrice = Number(product.oldPrice) || price * 2;
+    $('products').innerHTML = list.map(p => {
+      const price = Number(p.price) || 0;
+      const oldPrice = Number(p.oldPrice) || price * 2;
       const discount = oldPrice > 0
         ? Math.max(0, Math.round((1 - price / oldPrice) * 100))
         : 0;
@@ -152,174 +129,112 @@ function getCartInfo(key) {
       return `
         <article class="card">
           <div class="photo">
-            <a href="product.html?id=${encodeURIComponent(product.id)}"
-               aria-label="View ${esc(product.title)}">
-              <img src="${esc(product.image || '')}"
-                   alt="${esc(product.title)}"
+            <a href="product.html?id=${encodeURIComponent(p.id)}">
+              <img src="${esc(p.image)}" alt="${esc(p.title)}"
                    loading="lazy"
                    onerror="this.style.display='none'">
             </a>
-
-            <span class="tag">${esc(product.tag || 'SALE PICK')}</span>
-
-            <button class="heart"
-                    data-fav="${esc(product.id)}"
-                    type="button"
-                    aria-label="Favourite">♡</button>
+            <span class="tag">${esc(p.tag || 'SALE PICK')}</span>
+            <button class="heart" data-fav="${esc(p.id)}"
+                    type="button" aria-label="Favourite">♡</button>
           </div>
-
           <div class="info">
             <h3>
-              <a href="product.html?id=${encodeURIComponent(product.id)}">
-                ${esc(product.title)}
+              <a href="product.html?id=${encodeURIComponent(p.id)}">
+                ${esc(p.title)}
               </a>
             </h3>
-
             <div class="prices">
               <strong>${money(price)}</strong>
               <del>${money(oldPrice)}</del>
               <span class="discount">${discount}% off</span>
             </div>
-
-            <button class="add"
-                    data-add="${esc(product.id)}"
-                    type="button">Add to Cart</button>
+            <button class="add" data-add="${esc(p.id)}" type="button">
+              Add to Cart
+            </button>
           </div>
-        </article>
-      `;
+        </article>`;
     }).join('');
   }
 
-function renderCart() {
-  const entries = Object.entries(cart).filter(([key, quantity]) => {
-    const { id } = getCartInfo(key);
+  function getCartProduct(key) {
+    const id = String(key).split('__SIZE__')[0];
+    return products.find(p => String(p.id) === id);
+  }
 
-    return products.some(product => String(product.id) === id) &&
-      Number(quantity) > 0;
-  });
+  function renderCart() {
+    const entries = Object.entries(cart).filter(([key, qty]) =>
+      getCartProduct(key) && Number(qty) > 0
+    );
 
-  const count = entries.reduce(
-    (sum, [, quantity]) => sum + Number(quantity),
-    0
-  );
+    const count = entries.reduce(
+      (sum, [, qty]) => sum + Number(qty), 0
+    );
 
-  const total = entries.reduce((sum, [key, quantity]) => {
-    const { id } = getCartInfo(key);
-    const product = products.find(p => String(p.id) === id);
+    const total = entries.reduce((sum, [key, qty]) => {
+      const product = getCartProduct(key);
+      return sum + (product ? Number(product.price) * Number(qty) : 0);
+    }, 0);
 
-    return sum + (product ? Number(product.price) * Number(quantity) : 0);
-  }, 0);
+    if ($('count')) $('count').textContent = count;
+    if ($('subtotal')) $('subtotal').textContent = money(total);
+    if ($('checkoutOpen')) $('checkoutOpen').disabled = count === 0;
+    if ($('adminCount')) $('adminCount').textContent = products.length;
+    if (!$('cartItems')) return;
 
-  $('count').textContent = count;
-  $('subtotal').textContent = money(total);
+    $('cartItems').innerHTML = entries.length
+      ? entries.map(([key, qty]) => {
+          const product = getCartProduct(key);
+          const size = String(key).includes('__SIZE__')
+            ? String(key).split('__SIZE__').slice(1).join('__SIZE__')
+            : '';
 
-  $('cartItems').innerHTML = entries.length
-    ? entries.map(([key, quantity]) => {
-        const { id, size } = getCartInfo(key);
-        const product = products.find(p => String(p.id) === id);
-
-        if (!product) return '';
-
-        return `
-          <div class="cartline">
-            <img class="thumb"
-                 src="${esc(product.image || '')}"
-                 alt=""
-                 onerror="this.style.display='none'">
-
-            <div>
-              <b>${esc(product.title)}</b>
-              <p>${money(product.price)} each</p>
-              ${size
-                ? `<p><b>Size:</b> ${esc(size)}</p>`
-                : ''}
-
-              <div class="qty">
-                <button type="button"
-                        data-qty="${esc(key)}"
-                        data-delta="-1">−</button>
-
-                ${Number(quantity)}
-
-                <button type="button"
-                        data-qty="${esc(key)}"
-                        data-delta="1">+</button>
+          return `
+            <div class="cartline">
+              <img class="thumb" src="${esc(product.image)}" alt=""
+                   onerror="this.style.display='none'">
+              <div>
+                <b>${esc(product.title)}</b>
+                <p>${money(product.price)} each</p>
+                ${size ? `<p>Size: ${esc(size)}</p>` : ''}
+                <div class="qty">
+                  <button type="button" data-qty="${esc(key)}"
+                          data-delta="-1">−</button>
+                  ${Number(qty)}
+                  <button type="button" data-qty="${esc(key)}"
+                          data-delta="1">+</button>
+                </div>
               </div>
-            </div>
+              <b>${money(Number(product.price) * Number(qty))}</b>
+            </div>`;
+        }).join('')
+      : '<div class="empty"><h3>Your bag is waiting</h3><p>Add something lovely from the sale.</p></div>';
+  }
 
-            <b>${money(Number(product.price) * Number(quantity))}</b>
-          </div>
-        `;
-      }).join('')
-    : `
-      <div class="empty">
-        <h3>Your bag is waiting</h3>
-        <p>Add something lovely from the sale.</p>
-      </div>
-    `;
-
-  $('checkoutOpen').disabled = !count;
-      $('adminCount').textContent = products.length;
-    setupPriceEditor();
-    setupOrderHistory();
-    renderPriceEditorOptions();
-
-  // ADD PRICE EDITOR TO THE EXISTING ADMIN PANEL
-  // No index.html changes are needed for this section.
   function setupPriceEditor() {
-    if ($('adminEditForm')) return;
+    if ($('adminEditForm') || !$('resetDemo')) return;
 
-    const resetButton = $('resetDemo');
-
-    if (!resetButton) return;
-
-    resetButton.insertAdjacentHTML('beforebegin', `
+    $('resetDemo').insertAdjacentHTML('beforebegin', `
       <section id="priceEditor"
-               style="margin-top:24px;padding-top:18px;border-top:1px solid #eee">
-
+        style="margin-top:24px;padding-top:18px;border-top:1px solid #eee">
         <h3>Edit Existing Product</h3>
-        <p>Select a product and enter its new selling price.</p>
-
         <form id="adminEditForm">
-          <label>
-            Select product
-            <select id="editProductId" name="productId" required>
-            </select>
+          <label>Select product
+            <select id="editProductId" required></select>
           </label>
-
-          <label>
-            New selling price (₹)
-            <input
-              id="editPrice"
-              name="price"
-              type="number"
-              min="0.01"
-              step="0.01"
-              placeholder="Enter any price"
-              required
-            >
+          <label>New selling price (₹)
+            <input id="editPrice" type="number" min="0.01"
+                   step="0.01" required>
           </label>
-
-          <label>
-            Original / MRP price (₹)
-            <input
-              id="editOldPrice"
-              name="oldPrice"
-              type="number"
-              min="0.01"
-              step="0.01"
-              placeholder="Optional"
-            >
+          <label>Original / MRP price (₹)
+            <input id="editOldPrice" type="number" min="0.01"
+                   step="0.01" placeholder="Optional">
           </label>
-
           <button class="primary full" type="submit">
             Save Price Changes
           </button>
+          <p id="priceEditStatus" role="status"></p>
         </form>
-
-        <p id="priceEditStatus"
-           role="status"
-           style="font-size:13px"></p>
       </section>
     `);
 
@@ -328,51 +243,30 @@ function renderCart() {
     $('adminEditForm').addEventListener('submit', event => {
       event.preventDefault();
 
-      const productId = $('editProductId').value;
       const product = products.find(
-        item => String(item.id) === productId
+        p => String(p.id) === $('editProductId').value
       );
+      const price = Number($('editPrice').value);
+      const oldInput = $('editOldPrice').value.trim();
+      const oldPrice = oldInput ? Number(oldInput) : null;
 
-      if (!product) {
-        notify('Please select a product');
+      if (!product || !Number.isFinite(price) || price <= 0 ||
+          (oldPrice !== null &&
+           (!Number.isFinite(oldPrice) || oldPrice <= 0))) {
+        notify('Enter valid prices');
         return;
       }
 
-      const newPrice = Number($('editPrice').value);
-      const oldPriceInput = $('editOldPrice').value.trim();
-      const newOldPrice = oldPriceInput === ''
-        ? null
-        : Number(oldPriceInput);
-
-      if (!Number.isFinite(newPrice) || newPrice <= 0) {
-        notify('Enter a valid selling price');
-        return;
-      }
-
-      if (
-        newOldPrice !== null &&
-        (!Number.isFinite(newOldPrice) || newOldPrice <= 0)
-      ) {
-        notify('Enter a valid MRP or leave it blank');
-        return;
-      }
-
-      product.price = newPrice;
-
-      if (newOldPrice !== null) {
-        product.oldPrice = newOldPrice;
-      } else if (Number(product.oldPrice) < newPrice) {
-        product.oldPrice = newPrice;
-      }
+      product.price = price;
+      if (oldPrice !== null) product.oldPrice = oldPrice;
+      else if (Number(product.oldPrice) < price) product.oldPrice = price;
 
       save();
-      render();
+      renderProducts();
       renderCart();
-      fillPriceEditor();
-
+      renderPriceEditorOptions();
       $('priceEditStatus').textContent =
-        `${product.title}: new price ${money(product.price)} saved.`;
-
+        `${product.title}: price saved as ${money(price)}`;
       notify('Product price updated');
     });
 
@@ -383,18 +277,16 @@ function renderCart() {
     const select = $('editProductId');
     if (!select) return;
 
-    const previousValue = select.value;
-
-    select.innerHTML = products.map(product => `
-      <option value="${esc(product.id)}">
-        ${esc(product.title)} — ${money(product.price)}
+    const previous = select.value;
+    select.innerHTML = products.map(p => `
+      <option value="${esc(p.id)}">
+        ${esc(p.title)} — ${money(p.price)}
       </option>
     `).join('');
 
-    if (products.some(p => String(p.id) === previousValue)) {
-      select.value = previousValue;
+    if (products.some(p => String(p.id) === previous)) {
+      select.value = previous;
     }
-
     fillPriceEditor();
   }
 
@@ -403,224 +295,21 @@ function renderCart() {
     if (!select) return;
 
     const product = products.find(
-      item => String(item.id) === select.value
+      p => String(p.id) === select.value
     );
-
     if (!product) return;
 
     $('editPrice').value = product.price;
     $('editOldPrice').value = product.oldPrice ?? '';
   }
 
-  // GENERAL CLICK HANDLERS
-  document.addEventListener('click', event => {
-    const addButton = event.target.closest('[data-add]');
-
-    if (addButton) {
-      const id = addButton.dataset.add;
-
-      cart[id] = (Number(cart[id]) || 0) + 1;
-
-      save();
-      renderCart();
-      notify('Added to cart');
-      return;
-    }
-
-    const quantityButton = event.target.closest('[data-qty]');
-
-    if (quantityButton) {
-      const id = quantityButton.dataset.qty;
-
-      cart[id] = (Number(cart[id]) || 0) +
-        Number(quantityButton.dataset.delta);
-
-      if (cart[id] <= 0) delete cart[id];
-
-      save();
-      renderCart();
-      return;
-    }
-
-    const favourite = event.target.closest('[data-fav]');
-
-    if (favourite) {
-      favourite.classList.toggle('liked');
-      favourite.textContent =
-        favourite.classList.contains('liked') ? '♥' : '♡';
-      return;
-    }
-
-    const closeButton = event.target.closest('[data-close]');
-
-    if (closeButton) {
-      close(closeButton.dataset.close);
-    }
-
-    if (event.target.classList.contains('overlay')) {
-      close(event.target.id);
-    }
-  });
-
-  // SEARCH
-  $('search').addEventListener('input', event => {
-    query = event.target.value.trim().toLowerCase();
-    render();
-  });
-
-  $('clear').addEventListener('click', () => {
-    $('search').value = '';
-    query = '';
-    render();
-  });
-
-  // CATEGORIES
-  $('categories').addEventListener('click', event => {
-    const button = event.target.closest('[data-cat]');
-    if (!button) return;
-
-    category = button.dataset.cat;
-
-    document.querySelectorAll('[data-cat]').forEach(item => {
-      item.classList.toggle('active', item === button);
-    });
-
-    render();
-  });
-
-  // SORTING
-  $('sort').addEventListener('change', render);
-
-  $('reset').addEventListener('click', () => {
-    category = 'All';
-    query = '';
-    $('search').value = '';
-
-    document.querySelectorAll('[data-cat]').forEach(item => {
-      item.classList.toggle('active', item.dataset.cat === 'All');
-    });
-
-    render();
-  });
-
-  // CART OPEN
-  $('cartOpen').addEventListener('click', () => {
-    renderCart();
-    open('cartOverlay');
-  });
-
-   // CHECKOUT: DEMO ORDER PLACEMENT
-  $('checkoutOpen').addEventListener('click', () => {
-    if (Number($('count').textContent) === 0) return;
-
-    close('cartOverlay');
-    $('checkoutResult').hidden = true;
-    open('checkoutOverlay');
-  });
-
-  $('checkoutForm').addEventListener('submit', event => {
-    event.preventDefault();
-
-    const data = new FormData(event.currentTarget);
-    const name = String(data.get('name') || '').trim();
-    const phone = String(data.get('phone') || '').trim();
-    const address = String(data.get('address') || '').trim();
-
-    if (!name || !phone || !address) {
-      notify('Please complete all delivery details');
-      return;
-    }
-
-    const entries = Object.entries(cart)
-      .filter(([key, qty]) => {
-        const { id } = getCartInfo(key);
-        return products.some(p => String(p.id) === id) &&
-          Number(qty) > 0;
-      });
-
-    if (!entries.length) {
-      notify('Your cart is empty');
-      return;
-    }
-
-    const items = entries.map(([key, qty]) => {
-      const { id, size } = getCartInfo(key);
-      const product = products.find(
-        p => String(p.id) === id
-      );
-
-      return {
-        productId: product.id,
-        title: product.title,
-        price: Number(product.price),
-        quantity: Number(qty),
-        size: size || ''
-      };
-    });
-
-    const total = items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    const orderId =
-      'MS' + Date.now().toString().slice(-10);
-
-    // Demo order history: saved only in this browser.
-    const orderKey = 'msSaleDemoOrdersV1';
-    const previousOrders = parse(
-      localStorage.getItem(orderKey), []
-    );
-
-    const orders = Array.isArray(previousOrders)
-      ? previousOrders : [];
-
-    orders.push({
-      orderId,
-      items,
-      total,
-      status: 'Demo order placed',
-      createdAt: new Date().toISOString()
-    });
-
-    localStorage.setItem(orderKey, JSON.stringify(orders));
-
-    $('checkoutResult').hidden = false;
-    $('checkoutResult').innerHTML = `
-      <div class="notice" role="status">
-        <h3>Demo Order Confirmed!</h3>
-        <p>Order ID: <b>${esc(orderId)}</b></p>
-        <p>Name: ${esc(name)}</p>
-        <p>Mobile: ${esc(phone)}</p>
-        <p>Address: ${esc(address)}</p>
-        <p><b>Items</b></p>
-        <ul>
-          ${items.map(item => `
-            <li>
-              ${esc(item.title)}
-              ${item.size ? '(Size: ' + esc(item.size) + ')' : ''}
-              × ${item.quantity} — ${money(item.price * item.quantity)}
-            </li>
-          `).join('')}
-        </ul>
-        <p><b>Total: ${money(total)}</b></p>
-        <p>COD unavailable. No payment was taken.</p>
-        <p>This is a browser-only demo. The seller has not received this order.</p>
-      </div>
-    `;
-
-    notify('Demo order created');
-  });
-  
-  // ADMIN ORDER HISTORY — browser-only demo orders
   function setupOrderHistory() {
-    const resetButton = $('resetDemo');
-    if (!resetButton) return;
+    if (!$('resetDemo')) return;
 
     if (!$('orderHistory')) {
-      resetButton.insertAdjacentHTML('beforebegin', `
+      $('resetDemo').insertAdjacentHTML('beforebegin', `
         <section id="orderHistory"
-                 style="margin-top:24px;padding-top:18px;border-top:1px solid #eee">
+          style="margin-top:24px;padding-top:18px;border-top:1px solid #eee">
           <h3>Demo Order History</h3>
           <p>Orders saved in this browser only.</p>
           <button type="button" id="refreshOrderHistory">
@@ -632,28 +321,21 @@ function renderCart() {
     }
 
     function renderOrderHistory() {
-      const orders = parse(
-        localStorage.getItem('msSaleDemoOrdersV1'), []
-      );
+      const stored = read(ORDER_KEY, []);
+      const orders = Array.isArray(stored) ? stored.slice().reverse() : [];
 
-      const list = Array.isArray(orders) ? [...orders].reverse() : [];
-
-      $('orderHistoryList').innerHTML = list.length
-        ? list.map(order => `
-            <article style="padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px">
+      $('orderHistoryList').innerHTML = orders.length
+        ? orders.map(order => `
+            <article style="padding:12px;margin:12px 0;border:1px solid #ddd;border-radius:8px">
               <b>Order ID: ${esc(order.orderId)}</b>
               <p>Status: ${esc(order.status || 'Demo order')}</p>
               <p>Total: ${money(order.total)}</p>
               <ul>
-                ${(Array.isArray(order.items) ? order.items : [])
-                  .map(item => `
-                    <li>
-                      ${esc(item.title)} × ${Number(item.quantity) || 0}
-                      ${item.size ? '(Size: ' + esc(item.size) + ')' : ''}
-                    </li>
-                  `).join('')}
+                ${(Array.isArray(order.items) ? order.items : []).map(item => `
+                  <li>${esc(item.title)} × ${Number(item.quantity) || 0}</li>
+                `).join('')}
               </ul>
-              <small>Demo record — not a real customer order.</small>
+              <small>Demo record only — not a real customer order.</small>
             </article>
           `).join('')
         : '<p>No demo orders saved in this browser yet.</p>';
@@ -663,36 +345,190 @@ function renderCart() {
     renderOrderHistory();
   }
 
-  // ADMIN LOGIN
-  $('adminOpen').addEventListener('click', () => {
+  // Search
+  $('search')?.addEventListener('input', event => {
+    query = event.target.value.trim().toLowerCase();
+    renderProducts();
+  });
+
+  $('clear')?.addEventListener('click', () => {
+    $('search').value = '';
+    query = '';
+    renderProducts();
+  });
+
+  // Categories
+  $('categories')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-cat]');
+    if (!button) return;
+
+    category = button.dataset.cat;
+    document.querySelectorAll('[data-cat]').forEach(item => {
+      item.classList.toggle('active', item === button);
+    });
+    renderProducts();
+  });
+
+  $('sort')?.addEventListener('change', renderProducts);
+
+  $('reset')?.addEventListener('click', () => {
+    category = 'All';
+    query = '';
+    $('search').value = '';
+    document.querySelectorAll('[data-cat]').forEach(item => {
+      item.classList.toggle('active', item.dataset.cat === 'All');
+    });
+    renderProducts();
+  });
+
+  // Cart actions and modal close
+  document.addEventListener('click', event => {
+    const add = event.target.closest('[data-add]');
+    if (add) {
+      const id = add.dataset.add;
+      cart[id] = (Number(cart[id]) || 0) + 1;
+      save();
+      renderCart();
+      notify('Added to cart');
+      return;
+    }
+
+    const qty = event.target.closest('[data-qty]');
+    if (qty) {
+      const key = qty.dataset.qty;
+      cart[key] = (Number(cart[key]) || 0) +
+        Number(qty.dataset.delta);
+      if (cart[key] <= 0) delete cart[key];
+      save();
+      renderCart();
+      return;
+    }
+
+    const fav = event.target.closest('[data-fav]');
+    if (fav) {
+      fav.classList.toggle('liked');
+      fav.textContent = fav.classList.contains('liked') ? '♥' : '♡';
+      return;
+    }
+
+    const closeButton = event.target.closest('[data-close]');
+    if (closeButton) close(closeButton.dataset.close);
+    if (event.target.classList.contains('overlay')) close(event.target.id);
+  });
+
+  $('cartOpen')?.addEventListener('click', () => {
+    renderCart();
+    open('cartOverlay');
+  });
+
+  $('checkoutOpen')?.addEventListener('click', () => {
+    if (Number($('count').textContent) === 0) return;
+    close('cartOverlay');
+    $('checkoutResult').hidden = true;
+    open('checkoutOverlay');
+  });
+
+  // Demo checkout; no real payment or order submission.
+  $('checkoutForm')?.addEventListener('submit', event => {
+    event.preventDefault();
+
+    const data = new FormData(event.currentTarget);
+    const name = String(data.get('name') || '').trim();
+    const phone = String(data.get('phone') || '').trim();
+    const address = String(data.get('address') || '').trim();
+
+    if (!name || !/^[0-9]{10}$/.test(phone) || !address) {
+      notify('Enter your name, valid 10-digit mobile and address');
+      return;
+    }
+
+    const entries = Object.entries(cart).filter(([key, qty]) =>
+      getCartProduct(key) && Number(qty) > 0
+    );
+    if (!entries.length) {
+      notify('Your cart is empty');
+      return;
+    }
+
+    const items = entries.map(([key, qty]) => {
+      const product = getCartProduct(key);
+      const size = String(key).includes('__SIZE__')
+        ? String(key).split('__SIZE__').slice(1).join('__SIZE__')
+        : '';
+      return {
+        productId: product.id,
+        title: product.title,
+        price: Number(product.price),
+        quantity: Number(qty),
+        size
+      };
+    });
+
+    const total = items.reduce(
+      (sum, item) => sum + item.price * item.quantity, 0
+    );
+    const orderId = 'MS' + Date.now().toString().slice(-10);
+    const previous = read(ORDER_KEY, []);
+    const orders = Array.isArray(previous) ? previous : [];
+
+    orders.push({
+      orderId, name, phone, address, items, total,
+      status: 'Demo order placed',
+      createdAt: new Date().toISOString()
+    });
+    write(ORDER_KEY, orders);
+
+    $('checkoutResult').hidden = false;
+    $('checkoutResult').innerHTML = `
+      <div class="notice" role="status">
+        <h3>Demo Order Confirmed!</h3>
+        <p>Order ID: <b>${esc(orderId)}</b></p>
+        <p>Name: ${esc(name)}</p>
+        <p>Mobile: ${esc(phone)}</p>
+        <p>Address: ${esc(address)}</p>
+        <p><b>Items</b></p>
+        <ul>${items.map(item => `
+          <li>${esc(item.title)} × ${item.quantity} — ${money(item.price * item.quantity)}</li>
+        `).join('')}</ul>
+        <p><b>Total: ${money(total)}</b></p>
+        <p>Cash on Delivery unavailable. No payment was taken.</p>
+        <p>This is a browser-only demo. The seller has not received this order.</p>
+      </div>`;
+    notify('Demo order created');
+  });
+
+  // Admin login
+  $('adminOpen')?.addEventListener('click', () => {
     $('adminTools').hidden = true;
     $('adminForm').hidden = false;
     open('adminOverlay');
   });
 
-  $('adminForm').addEventListener('submit', event => {
+  $('adminForm')?.addEventListener('submit', event => {
     event.preventDefault();
 
-    if (new FormData(event.currentTarget).get('pin') !== '2468') {
+    if (String(new FormData(event.currentTarget).get('pin')) !== '2468') {
       notify('Incorrect demo PIN');
       return;
     }
 
     event.currentTarget.hidden = true;
     $('adminTools').hidden = false;
-
     $('adminCount').textContent = products.length;
+
     setupPriceEditor();
+    setupOrderHistory();
     renderPriceEditorOptions();
   });
 
-  // ADD NEW PRODUCT WITH ANY VALID PRICE
-  $('addForm').addEventListener('submit', event => {
+  // Add product
+  $('addForm')?.addEventListener('submit', event => {
     event.preventDefault();
 
     const data = new FormData(event.currentTarget);
-    const price = Number(data.get('price'));
     const title = String(data.get('title') || '').trim();
+    const price = Number(data.get('price'));
+    const image = String(data.get('image') || '').trim();
 
     if (!title || !Number.isFinite(price) || price <= 0) {
       notify('Enter a valid product name and price');
@@ -706,49 +542,51 @@ function renderCart() {
       price,
       oldPrice: price * 2,
       tag: 'NEW ARRIVAL',
-      image: String(data.get('image') || '').trim()
+      image
     });
 
     save();
-
     category = 'All';
+    query = '';
+    $('search').value = '';
 
     document.querySelectorAll('[data-cat]').forEach(item => {
       item.classList.toggle('active', item.dataset.cat === 'All');
     });
 
-    render();
+    renderProducts();
     renderCart();
     renderPriceEditorOptions();
-
     $('adminCount').textContent = products.length;
-
     event.currentTarget.reset();
     notify('Product added in this browser');
   });
 
-  // RESTORE DEMO PRODUCTS
-  $('resetDemo').addEventListener('click', () => {
+  // Restore demo products
+  $('resetDemo')?.addEventListener('click', () => {
     if (!confirm('Restore demo products and clear cart?')) return;
 
-    products = defaults.map(product => ({ ...product }));
+    products = defaults.map(p => ({ ...p }));
     cart = {};
-
     save();
-    render();
+    renderProducts();
     renderCart();
     renderPriceEditorOptions();
-
+    $('adminCount').textContent = products.length;
     notify('Demo products restored');
   });
 
-  // CLOSE PANELS WITH ESCAPE
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
-      document.querySelectorAll('.overlay:not([hidden])')
-        .forEach(overlay => close(overlay.id));
+      document.querySelectorAll('.overlay:not([hidden])').forEach(overlay => {
+        close(overlay.id);
+      });
     }
   });
 
-  $('year').textContent = new Date().getFullYear();
-  })();
+  if ($('year')) $('year').textContent = new Date().getFullYear();
+
+  // IMPORTANT: initial render happens immediately.
+  renderProducts();
+  renderCart();
+})();
