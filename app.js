@@ -1,10 +1,11 @@
 
 (() => {
-  'use strict';
+  "use strict";
 
-  const PRODUCT_KEY = 'msSaleProductsV3';
-  const CART_KEY = 'msSaleCartV3';
-  const ORDER_KEY = 'msSaleDemoOrdersV1';
+  const PRODUCT_KEY = "msSaleProductsV3";
+  const CART_KEY = "msSaleCartV3";
+  const ORDER_KEY = "msSaleDemoOrdersV1";
+  const PAYMENT_KEY = "msSalePaymentSettingsV1";
 
   const $ = id => document.getElementById(id);
 
@@ -21,15 +22,15 @@
     [10, "Women's Handbag", "Accessories", 299, 599, "TRENDING", "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=650&q=80"],
     [11, "Kitchen Storage Set", "Kitchen", 199, 349, "DAILY USE", "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=650&q=80"],
     [12, "Men's Casual Shoes", "Men", 299, 599, "BESTSELLER", "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=650&q=80"]
-  ].map(([id, title, category, price, oldPrice, tag, image]) => ({
-    id, title, category, price, oldPrice, tag, image
-  }));
+  ].map(([id, title, category, price, oldPrice, tag, image]) =>
+    ({ id, title, category, price, oldPrice, tag, image })
+  );
 
   function read(key, fallback) {
     try {
-      const value = JSON.parse(localStorage.getItem(key));
-      return value == null ? fallback : value;
-    } catch (_) {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch {
       return fallback;
     }
   }
@@ -37,556 +38,518 @@
   function write(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch (_) {
-      notify('Browser storage unavailable');
+      return true;
+    } catch {
+      toast("Browser storage unavailable. Changes may not save.");
+      return false;
     }
   }
 
   function esc(value) {
-    return String(value ?? '').replace(/[&<>"']/g, ch => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[ch]));
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
+    })[ch]);
   }
 
   function money(value) {
-    return '₹' + Number(value || 0).toLocaleString('en-IN');
+    return "₹" + Number(value || 0).toLocaleString("en-IN");
   }
 
-  let products = read(PRODUCT_KEY, null);
-  if (!Array.isArray(products) || !products.length) {
-    products = defaults.map(p => ({ ...p }));
-    write(PRODUCT_KEY, products);
+  let productList = read(PRODUCT_KEY, defaults);
+  if (!Array.isArray(productList)) productList = defaults;
+
+  let cart = read(CART_KEY, []);
+  if (!Array.isArray(cart)) cart = [];
+
+  let orders = read(ORDER_KEY, []);
+  if (!Array.isArray(orders)) orders = [];
+
+  let payment = read(PAYMENT_KEY, {
+    upiId: "",
+    payeeName: "",
+    qrUrl: ""
+  });
+
+  let activeCategory = "All";
+  let searchText = "";
+  let sortMode = "featured";
+
+  function toast(message) {
+    const el = $("toast");
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => el.classList.remove("show"), 2600);
   }
 
-  let cart = read(CART_KEY, {});
-  if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
-    cart = {};
-  }
-
-  let category = 'All';
-  let query = '';
-  let toastTimer;
-
-  function notify(message) {
-    const toast = $('toast');
-    if (!toast) return;
-
-    toast.textContent = message;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-
-    toastTimer = setTimeout(() => {
-      toast.classList.remove('show');
-    }, 2200);
-  }
-
-  function open(id) {
-    if ($(id)) $(id).hidden = false;
-  }
-
-  function close(id) {
-    if ($(id)) $(id).hidden = true;
-  }
-
-  function save() {
-    write(PRODUCT_KEY, products);
+  function saveCart() {
     write(CART_KEY, cart);
+    renderCart();
+  }
+
+  function getCartLines() {
+    return cart.map(line => {
+      const product = productList.find(p => p.id === line.id);
+      return product ? { ...product, qty: Math.max(1, Number(line.qty) || 1) } : null;
+    }).filter(Boolean);
+  }
+
+  function cartTotal() {
+    return getCartLines().reduce((sum, p) => sum + p.price * p.qty, 0);
   }
 
   function renderProducts() {
-    let list = products.filter(p =>
-      (category === 'All' || p.category === category) &&
-      `${p.title} ${p.category}`.toLowerCase().includes(query)
-    );
+    const container = $("products");
+    if (!container) return;
 
-    if ($('sort')?.value === 'low') {
-      list.sort((a, b) => Number(a.price) - Number(b.price));
-    }
+    let list = productList.filter(p => {
+      const matchesCategory = activeCategory === "All" || p.category === activeCategory;
+      const term = searchText.toLowerCase();
+      const matchesSearch = !term ||
+        p.title.toLowerCase().includes(term) ||
+        p.category.toLowerCase().includes(term);
+      return matchesCategory && matchesSearch;
+    });
 
-    if ($('sort')?.value === 'high') {
-      list.sort((a, b) => Number(b.price) - Number(a.price));
-    }
+    if (sortMode === "low") list.sort((a, b) => a.price - b.price);
+    if (sortMode === "high") list.sort((a, b) => b.price - a.price);
 
-    if ($('resultCount')) {
-      $('resultCount').textContent =
-        `${list.length} product${list.length === 1 ? '' : 's'}`;
-    }
-
-    if ($('empty')) $('empty').hidden = list.length > 0;
-    if (!$('products')) return;
-
-    $('products').innerHTML = list.map(p => {
-      const price = Number(p.price) || 0;
-      const oldPrice = Number(p.oldPrice) || price * 2;
-      const discount = oldPrice > 0
-        ? Math.max(0, Math.round((1 - price / oldPrice) * 100))
-        : 0;
-
-      return `
-        <article class="card">
-          <div class="photo">
-            <a href="product.html?id=${encodeURIComponent(p.id)}">
-              <img src="${esc(p.image)}" alt="${esc(p.title)}"
-                   loading="lazy"
-                   onerror="this.style.display='none'">
-            </a>
-            <span class="tag">${esc(p.tag || 'SALE PICK')}</span>
-            <button class="heart" data-fav="${esc(p.id)}"
-                    type="button" aria-label="Favourite">♡</button>
+    container.innerHTML = list.map(p => `
+      <article class="card">
+        <div class="photo">
+          <img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy"
+               onerror="this.style.display='none'">
+          <span class="tag">${esc(p.tag || "DEAL")}</span>
+        </div>
+        <div class="info">
+          <h3>${esc(p.title)}</h3>
+          <div class="prices">
+            <strong>${money(p.price)}</strong>
+            ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>` : ""}
           </div>
-          <div class="info">
-            <h3>
-              <a href="product.html?id=${encodeURIComponent(p.id)}">
-                ${esc(p.title)}
-              </a>
-            </h3>
-            <div class="prices">
-              <strong>${money(price)}</strong>
-              <del>${money(oldPrice)}</del>
-              <span class="discount">${discount}% off</span>
-            </div>
-            <button class="add" data-add="${esc(p.id)}" type="button">
-              Add to Cart
-            </button>
-          </div>
-        </article>`;
-    }).join('');
-  }
+          <button class="add" type="button" data-add="${Number(p.id)}">Add to cart</button>
+        </div>
+      </article>
+    `).join("");
 
-  function getCartProduct(key) {
-    const id = String(key).split('__SIZE__')[0];
-    return products.find(p => String(p.id) === id);
+    if ($("resultCount")) {
+      $("resultCount").textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
+    }
+    if ($("empty")) $("empty").hidden = list.length > 0;
   }
 
   function renderCart() {
-    const entries = Object.entries(cart).filter(([key, qty]) =>
-      getCartProduct(key) && Number(qty) > 0
-    );
+    const lines = getCartLines();
+    const count = lines.reduce((sum, p) => sum + p.qty, 0);
 
-    const count = entries.reduce(
-      (sum, [, qty]) => sum + Number(qty), 0
-    );
+    if ($("count")) $("count").textContent = count;
+    if ($("subtotal")) $("subtotal").textContent = money(cartTotal());
 
-    const total = entries.reduce((sum, [key, qty]) => {
-      const product = getCartProduct(key);
-      return sum + (product ? Number(product.price) * Number(qty) : 0);
-    }, 0);
+    const target = $("cartItems");
+    if (!target) return;
 
-    if ($('count')) $('count').textContent = count;
-    if ($('subtotal')) $('subtotal').textContent = money(total);
-    if ($('checkoutOpen')) $('checkoutOpen').disabled = count === 0;
-    if ($('adminCount')) $('adminCount').textContent = products.length;
-    if (!$('cartItems')) return;
+    if (!lines.length) {
+      target.innerHTML = '<p class="muted">Your cart is empty. Add a product to get started.</p>';
+      return;
+    }
 
-    $('cartItems').innerHTML = entries.length
-      ? entries.map(([key, qty]) => {
-          const product = getCartProduct(key);
-          const size = String(key).includes('__SIZE__')
-            ? String(key).split('__SIZE__').slice(1).join('__SIZE__')
-            : '';
-
-          return `
-            <div class="cartline">
-              <img class="thumb" src="${esc(product.image)}" alt=""
-                   onerror="this.style.display='none'">
-              <div>
-                <b>${esc(product.title)}</b>
-                <p>${money(product.price)} each</p>
-                ${size ? `<p>Size: ${esc(size)}</p>` : ''}
-                <div class="qty">
-                  <button type="button" data-qty="${esc(key)}"
-                          data-delta="-1">−</button>
-                  ${Number(qty)}
-                  <button type="button" data-qty="${esc(key)}"
-                          data-delta="1">+</button>
-                </div>
-              </div>
-              <b>${money(Number(product.price) * Number(qty))}</b>
-            </div>`;
-        }).join('')
-      : '<div class="empty"><h3>Your bag is waiting</h3><p>Add something lovely from the sale.</p></div>';
+    target.innerHTML = lines.map(p => `
+      <div class="cartline">
+        <img class="thumb" src="${esc(p.image)}" alt="${esc(p.title)}">
+        <div>
+          <b>${esc(p.title)}</b>
+          <div>${money(p.price)} each</div>
+          <div class="qty">
+            <button type="button" data-qty="${p.id}" data-change="-1" aria-label="Decrease quantity">−</button>
+            <span>${p.qty}</span>
+            <button type="button" data-qty="${p.id}" data-change="1" aria-label="Increase quantity">+</button>
+            <button type="button" data-remove="${p.id}">Remove</button>
+          </div>
+        </div>
+        <b>${money(p.price * p.qty)}</b>
+      </div>
+    `).join("");
   }
 
-  function setupPriceEditor() {
-    if ($('adminEditForm') || !$('resetDemo')) return;
+  function openOverlay(id) {
+    const el = $(id);
+    if (el) el.hidden = false;
+  }
 
-    $('resetDemo').insertAdjacentHTML('beforebegin', `
-      <section id="priceEditor"
-        style="margin-top:24px;padding-top:18px;border-top:1px solid #eee">
-        <h3>Edit Existing Product</h3>
-        <form id="adminEditForm">
-          <label>Select product
-            <select id="editProductId" required></select>
-          </label>
-          <label>New selling price (₹)
-            <input id="editPrice" type="number" min="0.01"
-                   step="0.01" required>
-          </label>
-          <label>Original / MRP price (₹)
-            <input id="editOldPrice" type="number" min="0.01"
-                   step="0.01" placeholder="Optional">
-          </label>
-          <button class="primary full" type="submit">
-            Save Price Changes
-          </button>
-          <p id="priceEditStatus" role="status"></p>
-        </form>
-      </section>
-    `);
+  function closeOverlay(id) {
+    const el = $(id);
+    if (el) el.hidden = true;
+  }
 
-    $('editProductId').addEventListener('change', fillPriceEditor);
+  function renderPaymentAdmin() {
+    const tools = $("adminTools");
+    if (!tools || $("paymentSettingsForm")) return;
 
-    $('adminEditForm').addEventListener('submit', event => {
+    const section = document.createElement("section");
+    section.className = "payment-admin";
+    section.innerHTML = `
+      <hr>
+      <h3>UPI payment settings</h3>
+      <p class="muted">Set the UPI ID and QR image customers will see at checkout.</p>
+      <form id="paymentSettingsForm">
+        <label>
+          Merchant UPI ID
+          <input name="upiId" value="${esc(payment.upiId)}"
+                 placeholder="yourmerchant@upi" autocomplete="off">
+        </label>
+        <label>
+          Display name (optional)
+          <input name="payeeName" value="${esc(payment.payeeName)}"
+                 placeholder="Store / merchant name" autocomplete="off">
+        </label>
+        <label>
+          QR code image URL
+          <input name="qrUrl" type="url" value="${esc(payment.qrUrl)}"
+                 placeholder="https://.../your-qr.png">
+        </label>
+        <button class="primary full" type="submit">Save payment settings</button>
+      </form>
+      <p class="muted">These settings save only in this browser. Do not enter bank passwords, UPI PINs or OTPs here.</p>
+    `;
+
+    tools.appendChild(section);
+
+    $("paymentSettingsForm").addEventListener("submit", event => {
       event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      const upiId = String(data.get("upiId") || "").trim();
+      const payeeName = String(data.get("payeeName") || "").trim();
+      const qrUrl = String(data.get("qrUrl") || "").trim();
 
-      const product = products.find(
-        p => String(p.id) === $('editProductId').value
-      );
-      const price = Number($('editPrice').value);
-      const oldInput = $('editOldPrice').value.trim();
-      const oldPrice = oldInput ? Number(oldInput) : null;
-
-      if (!product || !Number.isFinite(price) || price <= 0 ||
-          (oldPrice !== null &&
-           (!Number.isFinite(oldPrice) || oldPrice <= 0))) {
-        notify('Enter valid prices');
+      if (upiId && !/^[\w.-]+@[\w.-]+$/.test(upiId)) {
+        toast("Please check the UPI ID format.");
         return;
       }
 
-      product.price = price;
-      if (oldPrice !== null) product.oldPrice = oldPrice;
-      else if (Number(product.oldPrice) < price) product.oldPrice = price;
+      if (qrUrl) {
+        try {
+          const url = new URL(qrUrl);
+          if (url.protocol !== "https:" && url.protocol !== "http:") {
+            toast("Use a valid HTTP or HTTPS QR image URL.");
+            return;
+          }
+        } catch {
+          toast("Please enter a valid QR image URL.");
+          return;
+        }
+      }
 
-      save();
-      renderProducts();
-      renderCart();
-      renderPriceEditorOptions();
-      $('priceEditStatus').textContent =
-        `${product.title}: price saved as ${money(price)}`;
-      notify('Product price updated');
+      payment = { upiId, payeeName, qrUrl };
+      write(PAYMENT_KEY, payment);
+      toast("Payment settings saved in this browser.");
+      renderCheckoutPayment();
     });
-
-    renderPriceEditorOptions();
   }
 
-  function renderPriceEditorOptions() {
-    const select = $('editProductId');
-    if (!select) return;
+  function renderCheckoutPayment() {
+    const form = $("checkoutForm");
+    if (!form) return;
 
-    const previous = select.value;
-    select.innerHTML = products.map(p => `
-      <option value="${esc(p.id)}">
-        ${esc(p.title)} — ${money(p.price)}
-      </option>
-    `).join('');
-
-    if (products.some(p => String(p.id) === previous)) {
-      select.value = previous;
-    }
-    fillPriceEditor();
-  }
-
-  function fillPriceEditor() {
-    const select = $('editProductId');
-    if (!select) return;
-
-    const product = products.find(
-      p => String(p.id) === select.value
-    );
-    if (!product) return;
-
-    $('editPrice').value = product.price;
-    $('editOldPrice').value = product.oldPrice ?? '';
-  }
-
-  function setupOrderHistory() {
-    if (!$('resetDemo')) return;
-
-    if (!$('orderHistory')) {
-      $('resetDemo').insertAdjacentHTML('beforebegin', `
-        <section id="orderHistory"
-          style="margin-top:24px;padding-top:18px;border-top:1px solid #eee">
-          <h3>Demo Order History</h3>
-          <p>Orders saved in this browser only.</p>
-          <button type="button" id="refreshOrderHistory">
-            Refresh Orders
-          </button>
-          <div id="orderHistoryList" style="margin-top:12px"></div>
-        </section>
-      `);
+    let area = $("upiPaymentArea");
+    if (!area) {
+      area = document.createElement("section");
+      area.id = "upiPaymentArea";
+      area.className = "upi-payment";
+      const submit = form.querySelector('[type="submit"]');
+      form.insertBefore(area, submit || null);
     }
 
-    function renderOrderHistory() {
-      const stored = read(ORDER_KEY, []);
-      const orders = Array.isArray(stored) ? stored.slice().reverse() : [];
+    const upiId = String(payment.upiId || "").trim();
+    const payee = String(payment.payeeName || "").trim();
+    const qrUrl = String(payment.qrUrl || "").trim();
 
-      $('orderHistoryList').innerHTML = orders.length
-        ? orders.map(order => `
-            <article style="padding:12px;margin:12px 0;border:1px solid #ddd;border-radius:8px">
-              <b>Order ID: ${esc(order.orderId)}</b>
-              <p>Status: ${esc(order.status || 'Demo order')}</p>
-              <p>Total: ${money(order.total)}</p>
-              <ul>
-                ${(Array.isArray(order.items) ? order.items : []).map(item => `
-                  <li>${esc(item.title)} × ${Number(item.quantity) || 0}</li>
-                `).join('')}
-              </ul>
-              <small>Demo record only — not a real customer order.</small>
-            </article>
-          `).join('')
-        : '<p>No demo orders saved in this browser yet.</p>';
-    }
-
-    $('refreshOrderHistory').onclick = renderOrderHistory;
-    renderOrderHistory();
-  }
-
-  // Search
-  $('search')?.addEventListener('input', event => {
-    query = event.target.value.trim().toLowerCase();
-    renderProducts();
-  });
-
-  $('clear')?.addEventListener('click', () => {
-    $('search').value = '';
-    query = '';
-    renderProducts();
-  });
-
-  // Categories
-  $('categories')?.addEventListener('click', event => {
-    const button = event.target.closest('[data-cat]');
-    if (!button) return;
-
-    category = button.dataset.cat;
-    document.querySelectorAll('[data-cat]').forEach(item => {
-      item.classList.toggle('active', item === button);
-    });
-    renderProducts();
-  });
-
-  $('sort')?.addEventListener('change', renderProducts);
-
-  $('reset')?.addEventListener('click', () => {
-    category = 'All';
-    query = '';
-    $('search').value = '';
-    document.querySelectorAll('[data-cat]').forEach(item => {
-      item.classList.toggle('active', item.dataset.cat === 'All');
-    });
-    renderProducts();
-  });
-
-  // Cart actions and modal close
-  document.addEventListener('click', event => {
-    const add = event.target.closest('[data-add]');
-    if (add) {
-      const id = add.dataset.add;
-      cart[id] = (Number(cart[id]) || 0) + 1;
-      save();
-      renderCart();
-      notify('Added to cart');
+    if (!upiId && !qrUrl) {
+      area.innerHTML = `
+        <h3>Online payment</h3>
+        <p class="muted">The store has not configured its UPI ID or QR code yet.</p>
+        <p><b>Cash on Delivery is unavailable.</b></p>
+      `;
       return;
     }
 
-    const qty = event.target.closest('[data-qty]');
-    if (qty) {
-      const key = qty.dataset.qty;
-      cart[key] = (Number(cart[key]) || 0) +
-        Number(qty.dataset.delta);
-      if (cart[key] <= 0) delete cart[key];
-      save();
-      renderCart();
-      return;
-    }
+    const upiLink = upiId
+      ? `upi://pay?${new URLSearchParams({
+          pa: upiId,
+          pn: payee || "Meesho Sale",
+          cu: "INR",
+          tn: "Meesho Sale order"
+        }).toString()}`
+      : "";
 
-    const fav = event.target.closest('[data-fav]');
-    if (fav) {
-      fav.classList.toggle('liked');
-      fav.textContent = fav.classList.contains('liked') ? '♥' : '♡';
-      return;
-    }
+    area.innerHTML = `
+      <h3>Pay using UPI</h3>
+      <p class="muted">Scan the merchant QR with your UPI app, or copy the UPI ID.</p>
+      ${payee ? `<p>Store display name: <b>${esc(payee)}</b></p>` : ""}
+      ${qrUrl ? `
+        <div class="upi-qr-wrap">
+          <img class="upi-qr" src="${esc(qrUrl)}" alt="Merchant UPI QR code"
+               onerror="this.style.display='none';this.parentElement.querySelector('.qr-error').hidden=false">
+          <p class="muted qr-error" hidden>QR image could not be loaded. Check the image URL.</p>
+        </div>` : ""}
+      ${upiId ? `
+        <div class="upi-id-line">
+          <span><b>UPI ID:</b> <span id="merchantUpiText">${esc(upiId)}</span></span>
+          <button class="plain" type="button" id="copyUpiButton">Copy</button>
+        </div>
+        <a class="primary full upi-open" href="${esc(upiLink)}">Open UPI app</a>
+      ` : ""}
+      <p class="notice">After paying, keep your UPI app receipt. This website does not automatically verify payment. Do not enter your UPI PIN on this website.</p>
+      <label class="payment-confirm-label">
+        <input type="checkbox" id="paymentMadeCheck">
+        I have made the payment (this checkbox is not payment verification).
+      </label>
+      <p class="muted">Payment status: <b>Pending manual verification</b></p>
+      <p><b>Cash on Delivery is unavailable.</b></p>
+    `;
 
-    const closeButton = event.target.closest('[data-close]');
-    if (closeButton) close(closeButton.dataset.close);
-    if (event.target.classList.contains('overlay')) close(event.target.id);
-  });
-
-  $('cartOpen')?.addEventListener('click', () => {
-    renderCart();
-    open('cartOverlay');
-  });
-
-  $('checkoutOpen')?.addEventListener('click', () => {
-    if (Number($('count').textContent) === 0) return;
-    close('cartOverlay');
-    $('checkoutResult').hidden = true;
-    open('checkoutOverlay');
-  });
-
-  // Demo checkout; no real payment or order submission.
-  $('checkoutForm')?.addEventListener('submit', event => {
-    event.preventDefault();
-
-    const data = new FormData(event.currentTarget);
-    const name = String(data.get('name') || '').trim();
-    const phone = String(data.get('phone') || '').trim();
-    const address = String(data.get('address') || '').trim();
-
-    if (!name || !/^[0-9]{10}$/.test(phone) || !address) {
-      notify('Enter your name, valid 10-digit mobile and address');
-      return;
-    }
-
-    const entries = Object.entries(cart).filter(([key, qty]) =>
-      getCartProduct(key) && Number(qty) > 0
-    );
-    if (!entries.length) {
-      notify('Your cart is empty');
-      return;
-    }
-
-    const items = entries.map(([key, qty]) => {
-      const product = getCartProduct(key);
-      const size = String(key).includes('__SIZE__')
-        ? String(key).split('__SIZE__').slice(1).join('__SIZE__')
-        : '';
-      return {
-        productId: product.id,
-        title: product.title,
-        price: Number(product.price),
-        quantity: Number(qty),
-        size
-      };
-    });
-
-    const total = items.reduce(
-      (sum, item) => sum + item.price * item.quantity, 0
-    );
-    const orderId = 'MS' + Date.now().toString().slice(-10);
-    const previous = read(ORDER_KEY, []);
-    const orders = Array.isArray(previous) ? previous : [];
-
-    orders.push({
-      orderId, name, phone, address, items, total,
-      status: 'Demo order placed',
-      createdAt: new Date().toISOString()
-    });
-    write(ORDER_KEY, orders);
-
-    $('checkoutResult').hidden = false;
-    $('checkoutResult').innerHTML = `
-      <div class="notice" role="status">
-        <h3>Demo Order Confirmed!</h3>
-        <p>Order ID: <b>${esc(orderId)}</b></p>
-        <p>Name: ${esc(name)}</p>
-        <p>Mobile: ${esc(phone)}</p>
-        <p>Address: ${esc(address)}</p>
-        <p><b>Items</b></p>
-        <ul>${items.map(item => `
-          <li>${esc(item.title)} × ${item.quantity} — ${money(item.price * item.quantity)}</li>
-        `).join('')}</ul>
-        <p><b>Total: ${money(total)}</b></p>
-        <p>Cash on Delivery unavailable. No payment was taken.</p>
-        <p>This is a browser-only demo. The seller has not received this order.</p>
-      </div>`;
-    notify('Demo order created');
-  });
-
-  // Admin login
-  $('adminOpen')?.addEventListener('click', () => {
-    $('adminTools').hidden = true;
-    $('adminForm').hidden = false;
-    open('adminOverlay');
-  });
-
-  $('adminForm')?.addEventListener('submit', event => {
-    event.preventDefault();
-
-    if (String(new FormData(event.currentTarget).get('pin')) !== '2468') {
-      notify('Incorrect demo PIN');
-      return;
-    }
-
-    event.currentTarget.hidden = true;
-    $('adminTools').hidden = false;
-    $('adminCount').textContent = products.length;
-
-    setupPriceEditor();
-    setupOrderHistory();
-    renderPriceEditorOptions();
-  });
-
-  // Add product
-  $('addForm')?.addEventListener('submit', event => {
-    event.preventDefault();
-
-    const data = new FormData(event.currentTarget);
-    const title = String(data.get('title') || '').trim();
-    const price = Number(data.get('price'));
-    const image = String(data.get('image') || '').trim();
-
-    if (!title || !Number.isFinite(price) || price <= 0) {
-      notify('Enter a valid product name and price');
-      return;
-    }
-
-    products.unshift({
-      id: Date.now(),
-      title,
-      category: data.get('category'),
-      price,
-      oldPrice: price * 2,
-      tag: 'NEW ARRIVAL',
-      image
-    });
-
-    save();
-    category = 'All';
-    query = '';
-    $('search').value = '';
-
-    document.querySelectorAll('[data-cat]').forEach(item => {
-      item.classList.toggle('active', item.dataset.cat === 'All');
-    });
-
-    renderProducts();
-    renderCart();
-    renderPriceEditorOptions();
-    $('adminCount').textContent = products.length;
-    event.currentTarget.reset();
-    notify('Product added in this browser');
-  });
-
-  // Restore demo products
-  $('resetDemo')?.addEventListener('click', () => {
-    if (!confirm('Restore demo products and clear cart?')) return;
-
-    products = defaults.map(p => ({ ...p }));
-    cart = {};
-    save();
-    renderProducts();
-    renderCart();
-    renderPriceEditorOptions();
-    $('adminCount').textContent = products.length;
-    notify('Demo products restored');
-  });
-
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      document.querySelectorAll('.overlay:not([hidden])').forEach(overlay => {
-        close(overlay.id);
+    const copyButton = $("copyUpiButton");
+    if (copyButton) {
+      copyButton.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(upiId);
+          toast("UPI ID copied.");
+        } catch {
+          const temp = document.createElement("textarea");
+          temp.value = upiId;
+          document.body.appendChild(temp);
+          temp.select();
+          const ok = document.execCommand("copy");
+          temp.remove();
+          toast(ok ? "UPI ID copied." : "Please copy the UPI ID manually.");
+        }
       });
     }
+  }
+
+  function renderAdminCount() {
+    if ($("adminCount")) $("adminCount").textContent = productList.length;
+  }
+
+  // Product add buttons
+  $("products")?.addEventListener("click", event => {
+    const button = event.target.closest("[data-add]");
+    if (!button) return;
+    const id = Number(button.dataset.add);
+    const found = cart.find(line => line.id === id);
+    if (found) found.qty += 1;
+    else cart.push({ id, qty: 1 });
+    saveCart();
+    toast("Added to cart.");
   });
 
-  if ($('year')) $('year').textContent = new Date().getFullYear();
+  // Category filters
+  $("categories")?.addEventListener("click", event => {
+    const button = event.target.closest("[data-cat]");
+    if (!button) return;
+    activeCategory = button.dataset.cat;
+    $("categories").querySelectorAll("[data-cat]").forEach(el =>
+      el.classList.toggle("active", el === button)
+    );
+    renderProducts();
+  });
 
-  // IMPORTANT: initial render happens immediately.
+  $("search")?.addEventListener("input", event => {
+    searchText = event.target.value.trim();
+    renderProducts();
+  });
+
+  $("clear")?.addEventListener("click", () => {
+    if ($("search")) $("search").value = "";
+    searchText = "";
+    renderProducts();
+  });
+
+  $("sort")?.addEventListener("change", event => {
+    sortMode = event.target.value;
+    renderProducts();
+  });
+
+  $("reset")?.addEventListener("click", () => {
+    activeCategory = "All";
+    searchText = "";
+    if ($("search")) $("search").value = "";
+    $("categories")?.querySelectorAll("[data-cat]").forEach(el =>
+      el.classList.toggle("active", el.dataset.cat === "All")
+    );
+    renderProducts();
+  });
+
+  // Cart quantity controls
+  $("cartItems")?.addEventListener("click", event => {
+    const qtyButton = event.target.closest("[data-qty]");
+    const removeButton = event.target.closest("[data-remove]");
+
+    if (removeButton) {
+      cart = cart.filter(line => line.id !== Number(removeButton.dataset.remove));
+      saveCart();
+      return;
+    }
+
+    if (qtyButton) {
+      const id = Number(qtyButton.dataset.qty);
+      const line = cart.find(item => item.id === id);
+      if (!line) return;
+      line.qty += Number(qtyButton.dataset.change);
+      if (line.qty <= 0) cart = cart.filter(item => item.id !== id);
+      saveCart();
+    }
+  });
+
+  $("cartOpen")?.addEventListener("click", () => openOverlay("cartOverlay"));
+  $("adminOpen")?.addEventListener("click", () => openOverlay("adminOverlay"));
+
+  document.querySelectorAll("[data-close]").forEach(button => {
+    button.addEventListener("click", () => closeOverlay(button.dataset.close));
+  });
+
+  document.querySelectorAll(".overlay").forEach(overlay => {
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) overlay.hidden = true;
+    });
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      document.querySelectorAll(".overlay").forEach(el => el.hidden = true);
+    }
+  });
+
+  $("checkoutOpen")?.addEventListener("click", () => {
+    if (!getCartLines().length) {
+      toast("Your cart is empty.");
+      return;
+    }
+    closeOverlay("cartOverlay");
+    if ($("checkoutResult")) $("checkoutResult").hidden = true;
+    if ($("checkoutForm")) $("checkoutForm").hidden = false;
+    renderCheckoutPayment();
+    openOverlay("checkoutOverlay");
+  });
+
+  $("checkoutForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+
+    if (!getCartLines().length) {
+      toast("Your cart is empty.");
+      return;
+    }
+
+    if (!payment.upiId && !payment.qrUrl) {
+      toast("The store has not set up UPI payment yet.");
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const order = {
+      id: "MS" + Date.now(),
+      name: String(formData.get("name") || "").trim(),
+      phone: String(formData.get("phone") || "").trim(),
+      address: String(formData.get("address") || "").trim(),
+      items: getCartLines().map(p => ({
+        id: p.id, title: p.title, price: p.price, qty: p.qty
+      })),
+      total: cartTotal(),
+      paymentStatus: "Pending manual verification",
+      createdAt: new Date().toISOString()
+    };
+
+    orders.push(order);
+    write(ORDER_KEY, orders);
+
+    const result = $("checkoutResult");
+    if (result) {
+      result.hidden = false;
+      result.innerHTML = `
+        <div class="notice">
+          <b>Order preview saved.</b><br>
+          Order ID: ${esc(order.id)}<br>
+          Total: ${money(order.total)}<br>
+          Payment status: <b>Pending manual verification</b><br>
+          This demo does not verify payments or send a real delivery order.
+        </div>
+        <p>Complete the UPI payment using the QR code or UPI ID above. The store must verify the payment separately.</p>
+        <button class="primary full" type="button" id="finishDemoOrder">Finish demo</button>
+      `;
+      $("finishDemoOrder")?.addEventListener("click", () => {
+        cart = [];
+        saveCart();
+        closeOverlay("checkoutOverlay");
+        if (result) result.hidden = true;
+        event.currentTarget.reset();
+        toast("Demo order finished.");
+      });
+    }
+
+    if ($("checkoutForm")) $("checkoutForm").hidden = true;
+  });
+
+  // Admin PIN gate (browser-side demo only; not secure for a live store)
+  $("adminForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    if (String(data.get("pin")) !== "2468") {
+      toast("Incorrect demo PIN.");
+      return;
+    }
+
+    $("adminTools").hidden = false;
+    renderAdminCount();
+    renderPaymentAdmin();
+    toast("Demo admin tools opened.");
+  });
+
+  $("addForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const title = String(data.get("title") || "").trim();
+    if (!title) return;
+
+    const id = productList.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+    productList.push({
+      id,
+      title,
+      category: String(data.get("category") || "Women"),
+      price: Number(data.get("price")) || 199,
+      oldPrice: 0,
+      tag: "NEW",
+      image: String(data.get("image") || "")
+    });
+
+    write(PRODUCT_KEY, productList);
+    event.currentTarget.reset();
+    renderProducts();
+    renderAdminCount();
+    toast("Product added in this browser.");
+  });
+
+  $("resetDemo")?.addEventListener("click", () => {
+    if (!confirm("Reset demo products to the original list?")) return;
+    productList = defaults.map(p => ({ ...p }));
+    write(PRODUCT_KEY, productList);
+    renderProducts();
+    renderAdminCount();
+    toast("Demo products reset.");
+  });
+
+  if ($("year")) $("year").textContent = new Date().getFullYear();
+
+  // Initial render
   renderProducts();
   renderCart();
+
+  // Keep checkout wording accurate and add payment UI.
+  const checkoutNotice = document.querySelector("#checkoutOverlay .notice");
+  if (checkoutNotice) {
+    checkoutNotice.textContent =
+      "UPI payment details are displayed below when configured. Payments are not automatically verified and orders are demo-only.";
+  }
+
+  renderCheckoutPayment();
 })();
