@@ -2,16 +2,20 @@
   "use strict";
   const PRODUCTS_KEY = "meeshoSaleDemoProductsV1";
   const CART_KEY = "meeshoSaleDemoCartV1";
-  const defaultProducts = [
-    {id:1,title:"Everyday Tote Bag",category:"Fashion",price:199,oldPrice:399,emoji:"👜",bg:"#f6dff1",tag:"BESTSELLER"},
-    {id:2,title:"Minimal Ceramic Mug",category:"Home",price:149,oldPrice:249,emoji:"☕",bg:"#ffe7cf",tag:"SALE PICK"},
-    {id:3,title:"Glow Care Set",category:"Beauty",price:249,oldPrice:499,emoji:"🧴",bg:"#ffe0e9",tag:"POPULAR"},
-    {id:4,title:"Classic Sunglasses",category:"Accessories",price:299,oldPrice:599,emoji:"🕶️",bg:"#dce9ff",tag:"TRENDING"},
-    {id:5,title:"Soft Cushion Cover",category:"Home",price:199,oldPrice:349,emoji:"🛋️",bg:"#e1f5e7",tag:"HOME FAVOURITE"},
-    {id:6,title:"Daily Wear Earrings",category:"Fashion",price:149,oldPrice:299,emoji:"💎",bg:"#fff0c9",tag:"UNDER ₹149"},
-    {id:7,title:"Pocket Perfume",category:"Beauty",price:249,oldPrice:449,emoji:"🌸",bg:"#f1e3ff",tag:"FRESH FIND"},
-    {id:8,title:"Travel Organizer",category:"Accessories",price:299,oldPrice:499,emoji:"🎒",bg:"#d9f4f4",tag:"SMART PICK"}
-  ];
+  conconst defaultProducts = [
+  {id:1,title:"Women's Printed Kurti",category:"Fashion",price:199,oldPrice:399,emoji:"👗",tag:"BESTSELLER",bg:"#fce7f3",image:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80"},
+  {id:2,title:"Beautiful Makeup Combo",category:"Beauty",price:149,oldPrice:299,emoji:"💄",tag:"TRENDING",bg:"#fce7f3",image:"https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80"},
+  {id:3,title:"Women's Saree",category:"Fashion",price:299,oldPrice:599,emoji:"🥻",tag:"POPULAR",bg:"#fef3c7",image:"https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80"},
+  {id:4,title:"Fashion Earrings",category:"Fashion",price:149,oldPrice:299,emoji:"💎",tag:"BESTSELLER",bg:"#f3e8ff",image:"https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80"},
+  {id:5,title:"Men's Casual T-Shirt",category:"Fashion",price:199,oldPrice:399,emoji:"👕",tag:"TRENDING",bg:"#dbeafe",image:"https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80"},
+  {id:6,title:"Kids Clothing Set",category:"Fashion",price:249,oldPrice:499,emoji:"🧒",tag:"POPULAR",bg:"#fef3c7",image:"https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=600&q=80"},
+  {id:7,title:"Decorative Home Vase",category:"Home",price:199,oldPrice:349,emoji:"🏺",tag:"HOME PICK",bg:"#dcfce7",image:"https://images.unsplash.com/photo-1578500494198-246f612d3b3d?auto=format&fit=crop&w=600&q=80"},
+  {id:8,title:"Stylish Cushion Cover",category:"Home",price:149,oldPrice:299,emoji:"🛋️",tag:"DEAL",bg:"#fce7f3",image:"https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=600&q=80"},
+  {id:9,title:"Skincare Essentials",category:"Beauty",price:249,oldPrice:449,emoji:"🧴",tag:"BEAUTY PICK",bg:"#fce7f3",image:"https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=600&q=80"},
+  {id:10,title:"Women's Handbag",category:"Accessories",price:299,oldPrice:599,emoji:"👜",tag:"TRENDING",bg:"#ffedd5",image:"https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80"},
+  {id:11,title:"Kitchen Storage Set",category:"Home",price:199,oldPrice:349,emoji:"🍱",tag:"DAILY USE",bg:"#dbeafe",image:"https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=600&q=80"},
+  {id:12,title:"Men's Casual Shoes",category:"Accessories",price:299,oldPrice:599,emoji:"👟",tag:"BESTSELLER",bg:"#e0e7ff",image:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80"}
+];
   const $ = (id) => document.getElementById(id);
   const safeParse = (value, fallback) => { try { return JSON.parse(value) ?? fallback; } catch { return fallback; } };
   let products = safeParse(localStorage.getItem(PRODUCTS_KEY), null);
@@ -40,17 +44,17 @@
     $("emptyState").hidden = list.length !== 0;
     $("productGrid").innerHTML = list.map(p => `
       <article class="product-card">
-        <div class="product-visual" style="--product-bg:${esc(p.bg || "#f6eaff")}">
-          <span class="product-tag">${esc(p.tag || "SALE PICK")}</span>
-          <button class="heart-button" type="button" data-favourite="${p.id}" aria-label="Favourite ${esc(p.title)}">♡</button>
-          <span class="product-emoji" aria-hidden="true">${esc(p.emoji || "🛍️")}</span>
-        </div>
-        <div class="product-info">
-          <span class="product-category">${esc(p.category)}</span>
-          <h3>${esc(p.title)}</h3>
-          <div class="price-row"><span class="price">${money(p.price)}</span><span class="old-price">${money(p.oldPrice || p.price * 2)}</span></div>
-          <button class="add-button" type="button" data-add="${p.id}">＋ Add to cart</button>
-        </div>
+        <div class="product-visual" style="--product-bg:${esc(p.bg || "#f6eaff")};position:relative;overflow:hidden">
+  <img
+    src="${esc(p.image || "")}"
+    alt="${esc(p.title)}"
+    loading="lazy"
+    style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"
+    onerror="this.style.display='none'"
+  >
+  <span class="product-tag" style="position:relative">${esc(p.tag || "SALE PICK")}</span>
+  <button class="heart-button" type="button" data-favourite="${p.id}" aria-label="Favourite" style="position:relative">♡</button>
+</div>
       </article>`).join("");
   }
   function renderCart() {
