@@ -30,6 +30,112 @@
       🛍 Cart <b id="count">0</b>
     </button>
   </header>
+<!-- LIVE SALE COUNTDOWN -->
+<style>
+.live-sale{
+  max-width:1180px;
+  margin:18px auto;
+  padding:18px 20px;
+  border-radius:12px;
+  background:linear-gradient(110deg,#9f2089,#e80071);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  box-shadow:0 5px 18px #9f208925;
+}
+.live-sale-label{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1.5px;
+}
+.live-sale h2{
+  margin:7px 0;
+  font-size:22px;
+}
+.live-sale p{
+  margin:0;
+  font-size:12px;
+  opacity:.9;
+}
+.live-sale-clock{
+  min-width:125px;
+  text-align:center;
+  background:#fff;
+  color:#9f2089;
+  padding:12px 15px;
+  border-radius:9px;
+}
+.live-sale-clock span{
+  display:block;
+  font-size:30px;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.live-sale-clock small{
+  font-size:10px;
+  font-weight:bold;
+  letter-spacing:1px;
+}
+@media(max-width:600px){
+  .live-sale{
+    margin:12px 10px;
+    padding:15px 12px;
+    gap:8px;
+  }
+  .live-sale h2{font-size:17px}
+  .live-sale p{font-size:10px}
+  .live-sale-clock{min-width:98px;padding:10px 7px}
+  .live-sale-clock span{font-size:25px}
+}
+</style>
+<section class="live-sale" id="liveSale">
+  <div>
+    <div class="live-sale-label">🔴 LIVE SALE</div>
+    <h2 id="liveSaleTitle">Sale Ends In!</h2>
+    <p id="liveSaleMessage">
+      Hurry! Explore today's special deals.
+    </p>
+  </div>
+  <div class="live-sale-clock">
+    <span id="liveSaleTimer">10:00</span>
+    <small>MIN : SEC</small>
+  </div>
+</section>
+<script>
+(function(){
+  const KEY = 'msLiveSaleEndV1';
+  const timer = document.getElementById('liveSaleTimer');
+  const title = document.getElementById('liveSaleTitle');
+  const message = document.getElementById('liveSaleMessage');
+  if (!timer || !title || !message) return;
+  let endTime = Number(localStorage.getItem(KEY));
+  if (!Number.isFinite(endTime) || endTime <= 0) {
+    endTime = Date.now() + 10 * 60 * 1000;
+    localStorage.setItem(KEY, String(endTime));
+  }
+  function updateTimer(){
+    const remaining = Math.max(
+      0,
+      Math.ceil((endTime - Date.now()) / 1000)
+    );
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+    timer.textContent =
+      String(minutes).padStart(2, '0') + ':' +
+      String(seconds).padStart(2, '0');
+    if (remaining === 0) {
+      title.textContent = 'Sale Ended!';
+      message.textContent = 'This demo sale countdown has finished.';
+      clearInterval(interval);
+    }
+  }
+  updateTimer();
+  const interval = setInterval(updateTimer, 250);
+})();
+</script>
+<!-- END LIVE SALE COUNTDOWN -->
   <main>
     <section class="hero">
       <div>
