@@ -19,7 +19,21 @@
   const $ = (id) => document.getElementById(id);
   const safeParse = (value, fallback) => { try { return JSON.parse(value) ?? fallback; } catch { return fallback; } };
   let products = safeParse(localStorage.getItem(PRODUCTS_KEY), null);
-  if (!Array.isArray(products) || !products.length) products = defaultProducts.map(p => ({...p}));
+
+if (
+  !Array.isArray(products) ||
+  !products.length ||
+  !products.every(p =>
+    p &&
+    p.id != null &&
+    typeof p.title === "string" &&
+    typeof p.category === "string" &&
+    Number.isFinite(Number(p.price))
+  )
+) {
+  products = defaultProducts.map(p => ({ ...p }));
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+}
   let cart = safeParse(localStorage.getItem(CART_KEY), {});
   let activeCategory = "All";
   let searchTerm = "";
