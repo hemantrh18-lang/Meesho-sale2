@@ -1,142 +1,335 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#7b2cbf">
-  <title>Meesho Sale — Big savings, everyday finds</title>
-  <meta name="description" content="Shop everyday finds at special sale prices.">
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meesho Clone - Online Shopping Platform</title>
+    <!-- Google Fonts & FontAwesome for Icons -->
+    <link href="https://googleapis.com" rel="stylesheet">
+    <link rel="stylesheet" href="https://cloudflare.com">
+    
+    <style>
+        /* --- Core Reset & Variables --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        :root {
+            --meesho-pink: #f43397;
+            --text-dark: #353543;
+            --text-light: #666666;
+            --border-gray: #e7e7ec;
+            --bg-light: #f9f9f9;
+        }
+        body {
+            background-color: #fff;
+            color: var(--text-dark);
+        }
+
+        /* --- Header / Navigation Bar --- */
+        header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-gray);
+        }
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 20px;
+        }
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex: 1;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--meesho-pink);
+            text-decoration: none;
+            font-family: 'Mier B', sans-serif;
+        }
+        .search-container {
+            position: relative;
+            width: 60%;
+            max-width: 600px;
+        }
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+        .search-container input {
+            width: 100%;
+            padding: 12px 12px 12px 45px;
+            border: 1px solid var(--text-light);
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            color: var(--text-dark);
+        }
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 35px;
+        }
+        .nav-item-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .nav-item-link:hover {
+            color: var(--meesho-pink);
+        }
+        .profile-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 13px;
+            gap: 4px;
+        }
+        .profile-btn i {
+            font-size: 18px;
+        }
+
+        /* --- Secondary Category Navbar --- */
+        .category-navbar {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 20px;
+            list-style: none;
+            border-bottom: 1px solid var(--border-gray);
+            overflow-x: auto;
+        }
+        .category-navbar li {
+            font-size: 15px;
+            color: var(--text-dark);
+            cursor: pointer;
+            white-space: nowrap;
+            padding: 0 10px;
+            position: relative;
+        }
+        .category-navbar li:hover {
+            color: var(--meesho-pink);
+        }
+        .category-navbar li:hover::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--meesho-pink);
+        }
+
+        /* --- Main Banner Promo --- */
+        .promo-container {
+            max-width: 1200px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+        .hero-banner {
+            background-color: var(--bg-light);
+            display: flex;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-gray);
+        }
+        .hero-text {
+            flex: 1;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .hero-text h1 {
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 52px;
+            margin-bottom: 20px;
+        }
+        .hero-text p {
+            font-size: 18px;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+        .hero-img {
+            flex: 1;
+            background: #fde8e9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            min-height: 320px;
+        }
+        .hero-img i {
+            font-size: 200px;
+            color: var(--meesho-pink);
+            opacity: 0.8;
+            padding-bottom: 20px;
+        }
+
+        /* --- Product Grid Section --- */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 25px;
+        }
+        .product-card {
+            border: 1px solid var(--border-gray);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            background: #fff;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .product-image-placeholder {
+            height: 240px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 48px;
+        }
+        .product-details {
+            padding: 12px;
+        }
+        .product-name {
+            font-size: 14px;
+            color: var(--text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 6px;
+        }
+        .price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .current-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        .original-price {
+            font-size: 12px;
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+        .discount-tag {
+            color: #038d63;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .delivery-tag {
+            background-color: var(--bg-light);
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 20px;
+            display: inline-block;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .rating-badge {
+            background-color: #038d63;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .top-navbar { flex-direction: column; gap: 15px; }
+            .search-container { width: 100%; }
+            .hero-banner { flex-direction: column; }
+            .hero-img { display: none; }
+        }
+    </style>
 </head>
 <body>
-  <div class="top-strip">MEGA SALE • Extra savings on everyday finds</div>
-  
-<header class="site-header">
-  <a class="brand" href="./" aria-label="Meesho Sale home">
-    <span class="brand-mark">m</span>
-    <span>Meesho<span class="brand-sale">Sale</span></span>
-  </a>
 
-  <div class="search-wrap">
-    <span aria-hidden="true">⌕</span>
-    <input id="searchInput" type="search" placeholder="Search for sarees, kurtis, fashion and more" aria-label="Search products">
-    <button id="searchClear" aria-label="Clear search" type="button">×</button>
-  </div>
+    <!-- Header Block -->
+    <header>
+        <div class="top-navbar">
+            <div class="nav-left">
+                <a href="#" class="logo">meesho</a>
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Try Saree, Kurti or Search by Product Code">
+                </div>
+            </div>
+            <div class="nav-right">
+                <a href="#" class="nav-item-link"><i class="fa-solid fa-mobile-screen-button"></i> Download App</a>
+                <a href="#" class="nav-item-link">Become a Supplier</a>
+                <div class="nav-item-link profile-btn" id="loginBtn">
+                    <i class="fa-regular fa-user"></i>
+                    <span>Profile</span>
+                </div>
+                <div class="nav-item-link profile-btn">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>Cart</span>
+                </div>
+            </div>
+        </div>
 
-  <div class="header-actions">
-    <button id="adminOpen" class="text-btn" type="button">Admin</button>
-    <button id="cartOpen" class="cart-button" type="button">
-      <span aria-hidden="true">🛍</span> Cart <b id="cartCount">0</b>
-    </button>
-  </div>
-</header>
+        <!-- Navigation Row Items -->
+        <ul class="category-navbar">
+            <li>Women Ethnic</li>
+            <li>Women Western</li>
+            <li>Men</li>
+            <li>Kids</li>
+            <li>Home & Kitchen</li>
+            <li>Beauty & Health</li>
+            <li>Jewellery & Accessories</li>
+            <li>Bags & Footwear</li>
+            <li>Electronics</li>
+        </ul>
+    </header>
 
-
-  <main>
-    <section class="sale-ribbon">
-      <div><span class="live-dot"></span><strong>LIVE SALE</strong><span class="sale-sub">ENDS IN</span></div>
-      <div class="timer" id="saleTimer" aria-live="polite">10:00</div>
-      <span class="sale-note">Fresh deals • Limited-time offers</span>
-    </section>
-
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">THE EVERYDAY SALE</p>
-        <h1>Good finds.<br><span>Happy prices.</span></h1>
-        <p>Little upgrades, lovely gifts and daily essentials — all in one place.</p>
-        <a class="primary-button" href="#products">Shop the sale <span>→</span></a>
-        <div class="trust-row"><span>✓ Easy browsing</span><span>✓ Secure checkout setup-ready</span></div>
-      </div>
-      <div class="hero-art" aria-label="Illustration of shopping bags">
-        <div class="sun-shape"></div><div class="art-card card-one">NEW<br><b>FINDS</b></div>
-        <div class="shopping-bag bag-back"></div><div class="shopping-bag bag-front"><span>m</span></div>
-        <div class="sparkle sparkle-one">✦</div><div class="sparkle sparkle-two">✧</div>
-        <div class="price-sticker">FROM<br><b>₹149</b></div>
-      </div>
-    </section>
-
-    <section class="benefits" aria-label="Shopping highlights">
-      <div><span class="benefit-icon">♡</span><span><b>Sale prices</b><small>Easy-on-pocket picks</small></span></div>
-      <div><span class="benefit-icon">↗</span><span><b>Browse with ease</b><small>Search & filter products</small></span></div>
-      <div><span class="benefit-icon">₹</span><span><b>Online checkout</b><small>Payment integration required</small></span></div>
-    </section>
-
-    <section class="shop-section" id="products">
-      <div class="section-heading">
-        <div><p class="eyebrow">HANDPICKED FOR YOU</p><h2>Shop popular picks</h2></div>
-        <span id="resultCount" class="result-count">8 products</span>
-      </div>
-      
-<nav class="category-chips" id="categoryChips" aria-label="Product categories">
-  <button class="chip active" data-category="All">All products</button>
-  <button class="chip" data-category="Fashion">Women & Men Fashion</button>
-  <button class="chip" data-category="Home">Home & Living</button>
-  <button class="chip" data-category="Beauty">Beauty</button>
-  <button class="chip" data-category="Accessories">Accessories</button>
-  <button class="chip" data-category="Kids">Kids</button>
-  <button class="chip" data-category="Kitchen">Kitchen</button>
-</nav>
-
-      <div class="product-grid" id="productGrid"></div>
-      <div id="emptyState" class="empty-state" hidden><div>⌕</div><h3>No products found</h3><p>Try a different search or category.</p><button id="resetFilters" class="outline-button">Show all products</button></div>
-    </section>
-
-    <section class="bottom-promo"><div><p class="eyebrow">A LITTLE TREAT FOR YOU</p><h2>Find your next favourite.</h2><p>Explore the sale and discover something lovely today.</p></div><a href="#products" class="light-button">Explore products →</a></section>
-  </main>
-
-  <footer><a class="brand footer-brand" href="#"><span class="brand-mark">m</span><span>Meesho<span class="brand-sale">Sale</span></span></a><p>Independent demo storefront. Not affiliated with or endorsed by Meesho.</p><p>© <span id="year"></span> Meesho-Sale Demo</p></footer>
-
-  <div class="overlay" id="cartOverlay" hidden>
-    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
-      <div class="drawer-head"><div><p class="eyebrow">YOUR BAG</p><h2 id="cartTitle">Shopping cart</h2></div><button class="icon-close" data-close="cartOverlay" aria-label="Close cart">×</button></div>
-      <div id="cartItems" class="cart-items"></div>
-      <div class="cart-footer"><div class="total-line"><span>Subtotal</span><strong id="cartSubtotal">₹0</strong></div><p class="fine-print">Shipping and final charges are confirmed during a real checkout.</p><button id="checkoutOpen" class="primary-button full-width">Continue to checkout →</button><button class="outline-button full-width" data-close="cartOverlay">Continue shopping</button></div>
-    </aside>
-  </div>
-
-  <div class="overlay" id="checkoutOverlay" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
-      <div class="drawer-head"><div><p class="eyebrow">ALMOST THERE</p><h2 id="checkoutTitle">Checkout demo</h2></div><button class="icon-close" data-close="checkoutOverlay" aria-label="Close checkout">×</button></div>
-      <div class="notice"><b>Demo checkout only</b><br>This starter site does not collect payments or submit real orders. Connect a payment gateway and secure backend before taking customer payments.</div>
-      <form id="checkoutForm">
-        <label>Full name<input name="name" autocomplete="name" required placeholder="Enter your name"></label>
-        <label>Mobile number<input name="phone" inputmode="tel" pattern="[0-9]{10}" maxlength="10" required placeholder="10-digit mobile number"></label>
-        <label>Delivery address<textarea name="address" autocomplete="street-address" required rows="3" placeholder="House / street / area / city / PIN"></textarea></label>
-        <fieldset><legend>Payment method</legend><label class="payment-option"><input type="radio" name="payment" value="UPI" checked> <span><b>UPI / Online payment</b><small>Gateway integration required</small></span></label><label class="payment-option disabled-option"><input type="radio" disabled> <span><b>Cash on Delivery</b><small>Unavailable</small></span><em>Not available</em></label></fieldset>
-        <button class="primary-button full-width" type="submit">Preview order details</button>
-      </form>
-      <div id="checkoutResult" class="checkout-result" hidden></div>
-    </section>
-  </div>
-
-  <div class="overlay" id="adminOverlay" hidden>
-    <section class="modal admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
-      <div class="drawer-head"><div><p class="eyebrow">STORE TOOLS</p><h2 id="adminTitle">Demo admin panel</h2></div><button class="icon-close" data-close="adminOverlay" aria-label="Close admin">×</button></div>
-      <div class="notice warning"><b>Demo only:</b> this panel stores changes in this browser only. It has no login security and is not a production admin system.</div>
-      <form id="adminForm">
-        <label>Admin demo PIN<input name="pin" inputmode="numeric" required placeholder="Enter demo PIN"></label>
-        <p class="fine-print">Demo PIN: <b>2468</b>. Do not use this for a live store.</p>
-        <button class="primary-button full-width" type="submit">Open admin tools</button>
-      </form>
-      <div id="adminTools" hidden>
-        <div class="admin-stats"><div><small>Products</small><b id="adminProductCount">0</b></div><div><small>Cart items</small><b id="adminCartCount">0</b></div></div>
-        <h3>Add a product</h3>
-        <form id="addProductForm">
-          
-<label>Product photo URL
-  <input name="image" type="url" placeholder="https://example.com/product.jpg">
-</label>
-
-          <div class="form-two"><label>Price (₹)<select name="price"><option>149</option><option>199</option><option>249</option><option>299</option></select></label><label>Category<select name="category"><option>Fashion</option><option>Home</option><option>Beauty</option><option>Accessories</option></select></label></div>
-          <label>Emoji for product<input name="emoji" maxlength="4" placeholder="👜" value="🛍"></label>
-          <button class="primary-button full-width" type="submit">Add product</button>
-        </form>
-        <button id="resetDemo" class="outline-button full-width reset-button" type="button">Reset demo products</button>
-      </div>
-    </section>
-  </div>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js"></script>
-</body>
-</html>
+    <!-- Marketing / Promotion Area -->
+    <section class="promo-container">
+        <div class="hero-banner">
+            <div class="hero-text">
+                <h1>Lowest Prices<br>Best Quality Shopping</h1>
