@@ -1,81 +1,116 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#9f2089">
   <title>Product Details | Meesho Sale</title>
+  <link rel="stylesheet" href="./style.css">
   <style>
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Arial,sans-serif;background:#f7f7f7;color:#222}
-    header{background:#9f2089;color:white;padding:16px;font-size:21px;font-weight:bold}
-    main{max-width:850px;margin:20px auto;padding:16px;background:white;border-radius:12px}
-    img{display:block;width:100%;max-height:480px;object-fit:contain;background:#f8f1f8;border-radius:10px}
-    h1{font-size:23px;margin:20px 0 10px}
-    .price{font-size:25px;font-weight:bold}
-    del{color:#888;font-size:17px;margin-left:8px}
-    .category{color:#666;margin:12px 0}
-    button{width:100%;padding:14px;border:0;border-radius:8px;background:#9f2089;color:white;font-size:17px;font-weight:bold;margin-top:18px}
-    .back{display:inline-block;margin:0 0 15px;color:#9f2089;text-decoration:none}
-    #message{color:#16803c}
+    .detail-wrap{max-width:1000px;margin:30px auto;padding:0 18px}
+    .back-link{display:inline-block;color:#9f2089;margin-bottom:20px;font-size:14px}
+    .detail-card{display:grid;grid-template-columns:1fr 1fr;gap:35px}
+    .detail-image{width:100%;aspect-ratio:4/4.5;object-fit:cover;background:#fff4f9;border-radius:10px}
+    .detail-info h1{font-size:30px;letter-spacing:0;line-height:1.2}
+    .detail-price{font-size:27px;font-weight:bold;margin:18px 0}
+    .detail-price del{font-size:15px;color:#888;font-weight:normal;margin-left:8px}
+    .detail-info p{line-height:1.7;color:#777}
+    .detail-info .add{margin-top:20px;padding:13px}
+    .detail-notice{margin-top:20px;padding:14px;background:#fff4f9;border-radius:8px;font-size:13px;line-height:1.8}
+    @media(max-width:650px){.detail-card{grid-template-columns:1fr;gap:18px}.detail-info h1{font-size:25px}.detail-wrap{margin-top:18px}}
   </style>
 </head>
 <body>
-  <header>Meesho Sale</header>
-  <main>
-    <a class="back" href="./">← Back to shopping</a>
-    <img id="photo" alt="Product photo">
-    <h1 id="title">Product</h1>
-    <div>
-      <span class="price" id="price"></span>
-      <del id="oldPrice"></del>
+  <div class="top">MEESHO SALE · Everyday deals, lovely prices</div>
+  <header>
+    <a class="brand" href="./index.html">
+      <b>M</b><span>Meesho Sale</span>
+    </a>
+    <a class="plain" href="./index.html">← Continue Shopping</a>
+    <button class="cart" onclick="location.href='./index.html'">
+      🛍️ Shopping Bag
+    </button>
+  </header>
+  <main class="detail-wrap">
+    <a class="back-link" href="./index.html">← Back to shopping</a>
+    <div id="productDetail">
+      <p>Loading product details...</p>
     </div>
-    <p class="category" id="category"></p>
-    <p id="tag"></p>
-    <button id="add">Add to Cart</button>
-    <p id="message"></p>
-    <a class="back" href="./">Continue shopping</a>
+    <div class="detail-notice">
+      <b>Shopping information</b><br>
+      • Cash on Delivery is currently unavailable.<br>
+      • This is a demo storefront; no real order or payment is processed.<br>
+      • Product availability and prices are sample data.
+    </div>
   </main>
+  <footer>
+    <a class="brand" href="./index.html"><b>M</b><span>Meesho Sale</span></a>
+    <p>Affordable finds for everyday living.</p>
+    <small>© <span id="year"></span> Meesho Sale Demo</small>
+  </footer>
   <script>
-    const q = new URLSearchParams(location.search);
-    const id = q.get("id");
-    const title = q.get("title") || "Product";
-    const price = Number(q.get("price")) || 0;
-    const oldPrice = Number(q.get("oldPrice")) || price * 2;
-    const image = q.get("image") || "";
-    const category = q.get("category") || "";
-    const tag = q.get("tag") || "";
-
-    document.title = title + " | Meesho Sale";
-    document.getElementById("title").textContent = title;
-    document.getElementById("price").textContent =
-      "₹" + price.toLocaleString("en-IN");
-    document.getElementById("oldPrice").textContent =
-      "₹" + oldPrice.toLocaleString("en-IN");
-    document.getElementById("category").textContent = "Category: " + category;
-    document.getElementById("tag").textContent = tag;
-    document.getElementById("photo").src = image;
-    document.getElementById("photo").onerror = function() {
-      this.style.display = "none";
-    };
-
-    document.getElementById("add").addEventListener("click", function() {
-      if (!id || !price) {
-        document.getElementById("message").textContent =
-          "Product details are unavailable. Please return to shopping.";
-        return;
-      }
+  (() => {
+    const KEY = 'msSaleProductsV3';
+    const CART = 'msSaleCartV3';
+    const root = document.getElementById('productDetail');
+    document.getElementById('year').textContent = new Date().getFullYear();
+    let products = [];
+    try {
+      products = JSON.parse(localStorage.getItem(KEY) || '[]');
+    } catch (_) {}
+    const id = new URLSearchParams(location.search).get('id');
+    const product = products.find(p => String(p.id) === String(id));
+    const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c]));
+    const money = value => '₹' + Number(value || 0).toLocaleString('en-IN');
+    if (!product) {
+      root.innerHTML = `
+        <div class="empty">
+          <h2>Product not found</h2>
+          <p>Products are stored in the browser where the demo was used.</p>
+          <a class="primary" href="./index.html">Browse Products</a>
+        </div>`;
+      return;
+    }
+    root.innerHTML = `
+      <article class="detail-card">
+        <img class="detail-image"
+          src="${escapeHTML(product.image || '')}"
+          alt="${escapeHTML(product.title)}"
+          onerror="this.style.visibility='hidden'">
+        <div class="detail-info">
+          <small>${escapeHTML(product.category || 'Collection')}</small>
+          <h1>${escapeHTML(product.title)}</h1>
+          <div class="detail-price">
+            ${money(product.price)}
+            <del>${money(product.oldPrice || product.price * 2)}</del>
+          </div>
+          <p>Discover this pick from our affordable everyday collection.</p>
+          <p><b>Category:</b> ${escapeHTML(product.category || 'General')}</p>
+          <p><b>Delivery:</b> Confirm delivery arrangements before placing a real order.</p>
+          <button class="primary" id="addProduct" style="width:100%">
+            Add to Cart
+          </button>
+          <p id="message" role="status"></p>
+        </div>
+      </article>`;
+    document.getElementById('addProduct').addEventListener('click', () => {
       let cart = {};
       try {
-        cart = JSON.parse(localStorage.getItem("meeshoSaleDemoCartV1")) || {};
-      } catch (e) {
-        cart = {};
-      }
-      cart[id] = (Number(cart[id]) || 0) + 1;
-      localStorage.setItem("meeshoSaleDemoCartV1", JSON.stringify(cart));
-      document.getElementById("message").textContent =
-        "Added to cart! Go back to shopping to view your cart.";
+        cart = JSON.parse(localStorage.getItem(CART) || '{}');
+      } catch (_) {}
+      if (!cart || typeof cart !== 'object' || Array.isArray(cart)) cart = {};
+      cart[product.id] = (Number(cart[product.id]) || 0) + 1;
+      localStorage.setItem(CART, JSON.stringify(cart));
+      document.getElementById('message').textContent =
+        'Added to your demo cart! Return to the home page to view your bag.';
     });
+  })();
   </script>
 </body>
 </html>
