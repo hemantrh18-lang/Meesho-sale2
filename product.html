@@ -73,167 +73,37 @@
 
     const KEY = 'msSaleProductsV3';
     const CART = 'msSaleCartV3';
-    const SIZES = 'msSaleCartSizesV3';
-    const root = document.getElementById('productDetail');
-
-    document.getElementById('year').textContent =
-      new Date().getFullYear();
-
-    const escapeHTML = value =>
-      String(value ?? '').replace(/[&<>"']/g, c => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[c]));
-
-    const money = value =>
-      '₹' + Number(value || 0).toLocaleString('en-IN');
-
-    let products = [];
-
-    try {
-      products = JSON.parse(localStorage.getItem(KEY) || '[]');
-      if (!Array.isArray(products)) products = [];
-    } catch (_) {
-      products = [];
-    }
-
-    const id = new URLSearchParams(location.search).get('id');
-    const product = products.find(p => String(p.id) === String(id));
-
-    if (!product) {
-      root.innerHTML = `
-        <div class="empty">
-          <h2>Product not found</h2>
-          <p>Open this product from the home page on the same browser.</p>
-          <a class="primary" href="./index.html">Browse Products</a>
-        </div>`;
-      return;
-    }
-
-    const category = String(product.category || '').toLowerCase();
-    const title = String(product.title || '').toLowerCase();
-
-    const isClothing =
-      /women|men|clothing|fashion|apparel/.test(category) ||
-      /kurti|shirt|t-shirt|saree|dress|top|jeans|trouser|legging|palazzo|suit|gown|jacket|blouse|skirt/.test(title);
-
-    const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
-    let selectedSize = '';
-
-    const price = Number(product.price) || 0;
-    const oldPrice = Number(product.oldPrice) || price * 2;
-    const discount = oldPrice > price && oldPrice > 0
-      ? Math.round((oldPrice - price) / oldPrice * 100)
-      : 0;
-
-    const description =
-      product.description ||
-      product.desc ||
-      'A stylish everyday pick at an affordable price. Please check the product details before ordering.';
-
-    root.innerHTML = `
-      <article class="detail-card">
-        <img class="detail-image"
-          src="${escapeHTML(product.image || '')}"
-          alt="${escapeHTML(product.title || 'Product')}"
-          onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22450%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23fff4f9%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 fill=%22%239f2089%22 font-size=%2220%22%3EMeesho Sale%3C/text%3E%3C/svg%3E'">
-
-        <div class="detail-info">
-          <small>${escapeHTML(product.category || 'Collection')}</small>
-          <h1>${escapeHTML(product.title || 'Product')}</h1>
-
-          <div class="detail-price">
-            ${money(price)}
-            ${oldPrice > price ? `<del>${money(oldPrice)}</del>` : ''}
-          </div>
-
-          ${discount ? `<div class="discount">${discount}% off</div>` : ''}
-
-          <h3>Product Description</h3>
-          <p class="description">${escapeHTML(description)}</p>
-
-          <p><b>Category:</b> ${escapeHTML(product.category || 'General')}</p>
-          <p><b>Delivery:</b> Confirm delivery arrangements before a real order.</p>
-
-          ${isClothing ? `
-            <div class="size-title">Select Size *</div>
-            <div class="size-options" id="sizeOptions">
-              ${sizes.map(size => `
-                <button type="button" class="size-btn"
-                  data-size="${size}" aria-pressed="false">${size}</button>
-              `).join('')}
-            </div>
-            <p class="size-note">Please select your preferred size.</p>
-          ` : ''}
-
-          <button class="primary add" id="addProduct">
-            Add to Cart
-          </button>
-          <p id="message" role="status" aria-live="polite"></p>
-        </div>
-      </article>`;
-
-    const message = document.getElementById('message');
-
-    if (isClothing) {
-      document.querySelectorAll('.size-btn').forEach(button => {
-        button.addEventListener('click', () => {
-          selectedSize = button.dataset.size;
-
-          document.querySelectorAll('.size-btn').forEach(item => {
-            const active = item === button;
-            item.classList.toggle('selected', active);
-            item.setAttribute('aria-pressed', String(active));
-          });
-
-          message.textContent = 'Selected size: ' + selectedSize;
-        });
-      });
-    }
-
     document.getElementById('addProduct').addEventListener('click', () => {
-      if (isClothing && !selectedSize) {
-        message.style.color = '#b42318';
-        message.textContent = 'Please select a size before adding to cart.';
-        return;
-      }
+  if (isClothing && !selectedSize) {
+    message.style.color = '#b42318';
+    message.textContent = 'Please select a size before adding to cart.';
+    return;
+  }
 
-      try {
-        let cart = JSON.parse(localStorage.getItem(CART) || '{}');
+  try {
+    let cart = JSON.parse(localStorage.getItem(CART) || '{}');
 
-        if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
-          cart = {};
-        }
+    if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
+      cart = {};
+    }
 
-        cart[product.id] = (Number(cart[product.id]) || 0) + 1;
-        localStorage.setItem(CART, JSON.stringify(cart));
+    const cartKey = isClothing
+      ? `${product.id}__SIZE__${selectedSize}`
+      : String(product.id);
 
-        if (isClothing) {
-          let cartSizes = JSON.parse(localStorage.getItem(SIZES) || '{}');
+    cart[cartKey] = (Number(cart[cartKey]) || 0) + 1;
 
-          if (!cartSizes || typeof cartSizes !== 'object' ||
-              Array.isArray(cartSizes)) {
-            cartSizes = {};
-          }
+    localStorage.setItem(CART, JSON.stringify(cart));
 
-          cartSizes[product.id] = selectedSize;
-          localStorage.setItem(SIZES, JSON.stringify(cartSizes));
-        }
-
-        message.style.color = '#16833c';
-        message.textContent = isClothing
-          ? 'Added to demo cart! Size: ' + selectedSize
-          : 'Added to your demo cart! Return to the home page to view your bag.';
-      } catch (_) {
-        message.style.color = '#b42318';
-        message.textContent =
-          'Cart could not be updated. Please try again in your browser.';
-      }
-    });
-  })();
-  </script>
+    message.style.color = '#16833c';
+    message.textContent = isClothing
+      ? `Added to demo cart! Size: ${selectedSize}. Return to shopping to view your bag.`
+      : 'Added to your demo cart! Return to the home page to view your bag.';
+  } catch (_) {
+    message.style.color = '#b42318';
+    message.textContent =
+      'Cart could not be updated. Please try again in your browser.';
+  }
+});
 </body>
 </html>
