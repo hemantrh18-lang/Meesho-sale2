@@ -50,11 +50,46 @@
     localStorage.setItem(KEY, JSON.stringify(products));
   }
 
-  let cart = parse(localStorage.getItem(CART), {});
+  const SIZES = 'msSaleCartSizesV3';
+const SIZE_MARK = '__SIZE__';
 
-  if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
-    cart = {};
+let cart = parse(localStorage.getItem(CART), {});
+
+if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
+  cart = {};
+}
+
+// Purane cart ko naye size-aware format mein migrate karo.
+const oldSizes = parse(localStorage.getItem(SIZES), {});
+
+if (oldSizes && typeof oldSizes === 'object' && !Array.isArray(oldSizes)) {
+  Object.entries(oldSizes).forEach(([id, size]) => {
+    const oldQty = Number(cart[id]) || 0;
+
+    if (oldQty > 0 && size) {
+      const newKey = `${id}${SIZE_MARK}${size}`;
+      cart[newKey] = (Number(cart[newKey]) || 0) + oldQty;
+      delete cart[id];
+    }
+  });
+
+  localStorage.removeItem(SIZES);
+  localStorage.setItem(CART, JSON.stringify(cart));
+}
+
+function getCartInfo(key) {
+  const text = String(key);
+  const position = text.lastIndexOf(SIZE_MARK);
+
+  if (position === -1) {
+    return { id: text, size: '' };
   }
+
+  return {
+    id: text.slice(0, position),
+    size: text.slice(position + SIZE_MARK.length)
+  };
+}
 
   let category = 'All';
   let query = '';
@@ -155,67 +190,77 @@
     }).join('');
   }
 
-  // CART: ALWAYS USE CURRENT PRODUCT PRICE
-  function renderCart() {
-    const entries = Object.entries(cart).filter(([id, quantity]) =>
-      products.some(product => String(product.id) === id) &&
-      Number(quantity) > 0
-    );
+function renderCart() {
+  const entries = Object.entries(cart).filter(([key, quantity]) => {
+    const { id } = getCartInfo(key);
 
-    const count = entries.reduce(
-      (sum, [, quantity]) => sum + Number(quantity), 0
-    );
+    return products.some(product => String(product.id) === id) &&
+      Number(quantity) > 0;
+  });
 
-    const total = entries.reduce((sum, [id, quantity]) => {
-      const product = products.find(p => String(p.id) === id);
-      return sum + Number(product.price) * Number(quantity);
-    }, 0);
+  const count = entries.reduce(
+    (sum, [, quantity]) => sum + Number(quantity),
+    0
+  );
 
-    $('count').textContent = count;
-    $('subtotal').textContent = money(total);
+  const total = entries.reduce((sum, [key, quantity]) => {
+    const { id } = getCartInfo(key);
+    const product = products.find(p => String(p.id) === id);
 
-    $('cartItems').innerHTML = entries.length
-      ? entries.map(([id, quantity]) => {
-          const product = products.find(p => String(p.id) === id);
+    return sum + (product ? Number(product.price) * Number(quantity) : 0);
+  }, 0);
 
-          return `
-            <div class="cartline">
-              <img class="thumb"
-                   src="${esc(product.image || '')}"
-                   alt=""
-                   onerror="this.style.display='none'">
+  $('count').textContent = count;
+  $('subtotal').textContent = money(total);
 
-              <div>
-                <b>${esc(product.title)}</b>
-                <p>${money(product.price)} each</p>
+  $('cartItems').innerHTML = entries.length
+    ? entries.map(([key, quantity]) => {
+        const { id, size } = getCartInfo(key);
+        const product = products.find(p => String(p.id) === id);
 
-                <div class="qty">
-                  <button type="button"
-                          data-qty="${esc(id)}"
-                          data-delta="-1">−</button>
+        if (!product) return '';
 
-                  ${Number(quantity)}
+        return `
+          <div class="cartline">
+            <img class="thumb"
+                 src="${esc(product.image || '')}"
+                 alt=""
+                 onerror="this.style.display='none'">
 
-                  <button type="button"
-                          data-qty="${esc(id)}"
-                          data-delta="1">+</button>
-                </div>
+            <div>
+              <b>${esc(product.title)}</b>
+              <p>${money(product.price)} each</p>
+              ${size
+                ? `<p><b>Size:</b> ${esc(size)}</p>`
+                : ''}
+
+              <div class="qty">
+                <button type="button"
+                        data-qty="${esc(key)}"
+                        data-delta="-1">−</button>
+
+                ${Number(quantity)}
+
+                <button type="button"
+                        data-qty="${esc(key)}"
+                        data-delta="1">+</button>
               </div>
-
-              <b>${money(Number(product.price) * Number(quantity))}</b>
             </div>
-          `;
-        }).join('')
-      : `
-        <div class="empty">
-          <h3>Your bag is waiting</h3>
-          <p>Add something lovely from the sale.</p>
-        </div>
-      `;
 
-    $('checkoutOpen').disabled = !count;
-    $('adminCount').textContent = products.length;
-  }
+            <b>${money(Number(product.price) * Number(quantity))}</b>
+          </div>
+        `;
+      }).join('')
+    : `
+      <div class="empty">
+        <h3>Your bag is waiting</h3>
+        <p>Add something lovely from the sale.</p>
+      </div>
+    `;
+
+  $('checkoutOpen').disabled = !count;
+  $('adminCount').textContent = products.length;
+}
 
   // ADD PRICE EDITOR TO THE EXISTING ADMIN PANEL
   // No index.html changes are needed for this section.
@@ -475,15 +520,17 @@
 
     const data = new FormData(event.currentTarget);
 
-    const lines = Object.entries(cart).map(([id, quantity]) => {
-      const product = products.find(
-        item => String(item.id) === id
-      );
+    const lines = Object.entries(cart).map(([key, quantity]) => {
+  const { id, size } = getCartInfo(key);
 
-      return product && quantity > 0
-        ? `${product.title} × ${quantity}`
-        : '';
-    }).filter(Boolean).join(', ');
+  const product = products.find(
+    item => String(item.id) === id
+  );
+
+  if (!product || Number(quantity) <= 0) return '';
+
+  return `${product.title}${size ? ` (Size: ${size})` : ''} × ${quantity}`;
+}).filter(Boolean).join(', ');
 
     $('checkoutResult').hidden = false;
 
