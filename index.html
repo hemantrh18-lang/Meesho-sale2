@@ -7,17 +7,14 @@
   <title>Meesho Sale | Everyday finds</title>
   <link rel="stylesheet" href="./style.css">
 </head>
-
 <body>
   <div class="top">
     MEGA SALE · Extra savings on everyday finds
   </div>
-
   <header>
     <a class="brand" href="./">
       <b>m</b> Meesho<span>Sale</span>
     </a>
-
     <div class="search">
       <span>⌕</span>
       <input
@@ -28,72 +25,58 @@
       >
       <button id="clear" type="button" aria-label="Clear search">×</button>
     </div>
-
     <button id="adminOpen" class="plain" type="button">Admin</button>
-
     <button id="cartOpen" class="cart" type="button">
       🛍 Cart <b id="count">0</b>
     </button>
   </header>
-
   <main>
     <section class="hero">
       <div>
         <small>THE EVERYDAY SALE</small>
         <h1>Good finds.<br><em>Happy prices.</em></h1>
-
         <p>
           Fashion, home essentials and little things you'll love
           — at easy-on-pocket prices.
         </p>
-
         <a class="primary" href="#shop">Shop the sale →</a>
-
         <p class="ticks">
           ✓ Budget-friendly picks　 ✓ Easy browsing
         </p>
       </div>
-
       <div class="heroart">
         <div class="sticker">
           SALE<br>
           <b>UP TO 50%</b><br>
           OFF*
         </div>
-
         <div class="art a">👗<small>Everyday style</small></div>
         <div class="art b">👜<small>Little joys</small></div>
         <div class="art c">🏡<small>Lovely home</small></div>
       </div>
     </section>
-
     <section class="benefits">
       <div>
         ♡ <b>Prices you'll love</b>
         <small>Affordable everyday finds</small>
       </div>
-
       <div>
         ⌕ <b>Easy discovery</b>
         <small>Search and shop categories</small>
       </div>
-
       <div>
         🛍 <b>Shopping bag</b>
         <small>Manage your cart</small>
       </div>
     </section>
-
     <section id="shop" class="shop">
       <div class="heading">
         <div>
           <small>HANDPICKED FOR YOU</small>
           <h2>Shop popular picks</h2>
         </div>
-
         <span id="resultCount">12 products</span>
       </div>
-
       <nav id="categories" aria-label="Product categories">
         <button class="active" data-cat="All" type="button">All products</button>
         <button data-cat="Women" type="button">Women</button>
@@ -104,10 +87,8 @@
         <button data-cat="Kitchen" type="button">Kitchen</button>
         <button data-cat="Accessories" type="button">Accessories</button>
       </nav>
-
       <div class="tools">
         <span>Fresh deals for your everyday needs</span>
-
         <label>
           Sort
           <select id="sort">
@@ -117,43 +98,34 @@
           </select>
         </label>
       </div>
-
       <div id="products" class="grid"></div>
-
       <div id="empty" hidden class="empty">
         <h3>No products found</h3>
         <p>Try another search or category.</p>
         <button id="reset" type="button">Show all products</button>
       </div>
     </section>
-
     <section class="closing">
       <div>
         <small>A LITTLE TREAT FOR YOU</small>
         <h2>Find your next favourite.</h2>
         <p>Explore affordable picks for your wardrobe and home.</p>
       </div>
-
       <a class="primary" href="#shop">Explore products →</a>
     </section>
   </main>
-
   <footer>
     <a class="brand" href="./">
       <b>m</b> Meesho<span>Sale</span>
     </a>
-
     <p>
       Independent demo storefront. Not affiliated with or endorsed by Meesho.
     </p>
-
     <small>
       © <span id="year"></span> Meesho Sale Demo · Checkout is not live
     </small>
   </footer>
-
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
   <!-- Shopping cart -->
   <div id="cartOverlay" class="overlay" hidden>
     <section class="panel">
@@ -162,32 +134,25 @@
           <small>YOUR BAG</small>
           <h2>Shopping cart</h2>
         </div>
-
         <button data-close="cartOverlay" type="button" aria-label="Close cart">×</button>
       </div>
-
       <div id="cartItems"></div>
-
       <div class="bottom">
         <p class="subtotal">
           Subtotal <b id="subtotal">₹0</b>
         </p>
-
         <p class="muted">
           Demo checkout only. No payment is taken.
         </p>
-
         <button id="checkoutOpen" class="primary full" type="button">
           Continue to checkout →
         </button>
-
         <button data-close="cartOverlay" class="plain full" type="button">
           Continue shopping
         </button>
       </div>
     </section>
   </div>
-
   <!-- Checkout demo -->
   <div id="checkoutOverlay" class="overlay" hidden>
     <section class="modal">
@@ -196,20 +161,16 @@
           <small>ALMOST THERE</small>
           <h2>Checkout demo</h2>
         </div>
-
         <button data-close="checkoutOverlay" type="button" aria-label="Close checkout">×</button>
       </div>
-
       <div class="notice">
         This website does not take payments or send real orders.
       </div>
-
       <form id="checkoutForm">
         <label>
           Full name
           <input name="name" autocomplete="name" required>
         </label>
-
         <label>
           Mobile number
           <input
@@ -221,24 +182,19 @@
             required
           >
         </label>
-
         <label>
           Delivery address
           <textarea name="address" autocomplete="street-address" required></textarea>
         </label>
-
         <p>
           Payment method: Online payment not enabled ·
           <b>Cash on Delivery unavailable</b>
         </p>
-
         <button class="primary full" type="submit">Preview order</button>
       </form>
-
       <div id="checkoutResult" hidden></div>
     </section>
   </div>
-
   <!-- Demo admin panel -->
   <div id="adminOverlay" class="overlay" hidden>
     <section class="modal">
@@ -247,15 +203,12 @@
           <small>STORE TOOLS</small>
           <h2>Demo admin panel</h2>
         </div>
-
         <button data-close="adminOverlay" type="button" aria-label="Close admin">×</button>
       </div>
-
       <div class="notice">
         Demo only: changes are saved in this browser, not shared with visitors.
         The demo PIN is not secure for a live store.
       </div>
-
       <form id="adminForm">
         <label>
           Demo PIN
@@ -266,21 +219,16 @@
             placeholder="Demo PIN: 2468"
           >
         </label>
-
         <button class="primary full" type="submit">Open admin tools</button>
       </form>
-
       <div id="adminTools" hidden>
         <p>Products: <b id="adminCount">12</b></p>
-
         <h3>Add product</h3>
-
         <form id="addForm">
           <label>
             Product name
             <input name="title" required>
           </label>
-
           <label>
             Price
             <select name="price">
@@ -290,7 +238,6 @@
               <option>299</option>
             </select>
           </label>
-
           <label>
             Category
             <select name="category">
@@ -303,22 +250,18 @@
               <option>Accessories</option>
             </select>
           </label>
-
           <label>
             Image URL (optional)
             <input name="image" type="url" placeholder="https://...">
           </label>
-
           <button class="primary full" type="submit">Add product</button>
         </form>
-
         <button id="resetDemo" class="danger full" type="button">
           Reset demo products
         </button>
       </div>
     </section>
   </div>
-
   <script src="./app.js" defer></script>
 </body>
 </html>
