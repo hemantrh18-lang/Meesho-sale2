@@ -2,7 +2,7 @@
   "use strict";
   const PRODUCTS_KEY = "meeshoSaleDemoProductsV1";
   const CART_KEY = "meeshoSaleDemoCartV1";
-  conconst defaultProducts = [
+  const defaultProducts = [
   {id:1,title:"Women's Printed Kurti",category:"Fashion",price:199,oldPrice:399,emoji:"👗",tag:"BESTSELLER",bg:"#fce7f3",image:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80"},
   {id:2,title:"Beautiful Makeup Combo",category:"Beauty",price:149,oldPrice:299,emoji:"💄",tag:"TRENDING",bg:"#fce7f3",image:"https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80"},
   {id:3,title:"Women's Saree",category:"Fashion",price:299,oldPrice:599,emoji:"🥻",tag:"POPULAR",bg:"#fef3c7",image:"https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80"},
