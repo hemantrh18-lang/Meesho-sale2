@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#9f2089">
   <title>Product Details | Meesho Sale</title>
@@ -20,49 +21,32 @@
     .size-options{display:flex;flex-wrap:wrap;gap:10px}
     .size-btn{border:1px solid #ccc;border-radius:7px;background:white;padding:10px 16px;cursor:pointer}
     .size-btn.selected{border:2px solid #9f2089;color:#9f2089;background:#fff4fb}
-    .size-btn:focus-visible{outline:2px solid #9f2089}
-    .size-note{font-size:13px;color:#777;margin-top:8px}
     .detail-info .add{width:100%;margin-top:20px;padding:14px;cursor:pointer}
     .detail-notice{margin-top:22px;padding:14px;background:#fff4f9;border-radius:8px;font-size:13px;line-height:1.8}
-    #message{color:#16833c;line-height:1.5}
-    @media(max-width:650px){
-      .detail-card{grid-template-columns:1fr;gap:18px}
-      .detail-info h1{font-size:24px}
-      .detail-wrap{margin-top:18px}
-    }
+    #message{line-height:1.5}
+    @media(max-width:650px){.detail-card{grid-template-columns:1fr;gap:18px}.detail-info h1{font-size:24px}}
   </style>
 </head>
 <body>
   <div class="top">MEESHO SALE · Everyday deals, lovely prices</div>
-
   <header>
-    <a class="brand" href="./index.html">
-      <b>M</b><span>Meesho Sale</span>
-    </a>
+    <a class="brand" href="./index.html"><b>M</b><span>Meesho Sale</span></a>
     <a class="plain" href="./index.html">← Continue Shopping</a>
-    <button class="cart" onclick="location.href='./index.html'">
-      🛍️ Shopping Bag
-    </button>
+    <a class="cart" href="./index.html">🛍️ Shopping Bag</a>
   </header>
 
   <main class="detail-wrap">
     <a class="back-link" href="./index.html">← Back to shopping</a>
-    <div id="productDetail">
-      <p>Loading product details...</p>
-    </div>
-
+    <div id="productDetail">Loading product details...</div>
     <div class="detail-notice">
       <b>Shopping information</b><br>
-      • Cash on Delivery is currently unavailable.<br>
-      • This is a demo storefront; no real order or payment is processed.<br>
-      • Prices and availability are sample data.
+      • Cash on Delivery unavailable.<br>
+      • Demo only; no real orders or payments are processed.
     </div>
   </main>
 
   <footer>
-    <a class="brand" href="./index.html">
-      <b>M</b><span>Meesho Sale</span>
-    </a>
+    <a class="brand" href="./index.html"><b>M</b><span>Meesho Sale</span></a>
     <p>Affordable finds for everyday living.</p>
     <small>© <span id="year"></span> Meesho Sale Demo</small>
   </footer>
@@ -73,37 +57,137 @@
 
     const KEY = 'msSaleProductsV3';
     const CART = 'msSaleCartV3';
-    document.getElementById('addProduct').addEventListener('click', () => {
-  if (isClothing && !selectedSize) {
-    message.style.color = '#b42318';
-    message.textContent = 'Please select a size before adding to cart.';
-    return;
-  }
+    const MARK = '__SIZE__';
+    const root = document.getElementById('productDetail');
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-  try {
-    let cart = JSON.parse(localStorage.getItem(CART) || '{}');
+    const defaults = [
+      [1,"Women's Printed Kurti","Women",199,399,"BESTSELLER","https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=650&q=80"],
+      [2,"Makeup Combo","Beauty",149,299,"TRENDING","https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=650&q=80"],
+      [3,"Festive Saree","Women",299,599,"POPULAR","https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=650&q=80"],
+      [4,"Fashion Earrings","Accessories",149,299,"BESTSELLER","https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=650&q=80"],
+      [5,"Men's Casual T-Shirt","Men",199,399,"TRENDING","https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=650&q=80"],
+      [6,"Kids Clothing Set","Kids",249,499,"POPULAR","https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=650&q=80"],
+      [7,"Decorative Home Vase","Home",199,349,"HOME PICK","https://images.unsplash.com/photo-1578500494198-246f612d3b3d?auto=format&fit=crop&w=650&q=80"],
+      [8,"Cushion Cover","Home",149,299,"DEAL","https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=650&q=80"],
+      [9,"Skincare Essentials","Beauty",249,449,"BEAUTY PICK","https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=650&q=80"],
+      [10,"Women's Handbag","Accessories",299,599,"TRENDING","https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=650&q=80"],
+      [11,"Kitchen Storage Set","Kitchen",199,349,"DAILY USE","https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=650&q=80"],
+      [12,"Men's Casual Shoes","Men",299,599,"BESTSELLER","https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=650&q=80"]
+    ].map(([id,title,category,price,oldPrice,tag,image]) => ({
+      id,title,category,price,oldPrice,tag,image
+    }));
 
-    if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
-      cart = {};
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+
+    const money = value => '₹' + Number(value || 0).toLocaleString('en-IN');
+
+    let saved = [];
+    try {
+      const raw = localStorage.getItem(KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) saved = parsed;
+    } catch (_) {}
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+
+    if (id === null || id === '') {
+      root.innerHTML = '<h2>Product ID missing</h2><p>Home page par wapas jaakar product par tap karo.</p><a href="./index.html">Back to shopping</a>';
+      return;
     }
 
-    const cartKey = isClothing
-      ? `${product.id}__SIZE__${selectedSize}`
-      : String(product.id);
+    let product = saved.find(p => String(p.id) === String(id));
 
-    cart[cartKey] = (Number(cart[cartKey]) || 0) + 1;
+    if (!product) {
+      product = defaults.find(p => String(p.id) === String(id));
+    }
 
-    localStorage.setItem(CART, JSON.stringify(cart));
+    if (!product) {
+      root.innerHTML = '<h2>Product not found</h2><p>Is product ko home page se dobara kholo.</p><a href="./index.html">Back to shopping</a>';
+      return;
+    }
 
-    message.style.color = '#16833c';
-    message.textContent = isClothing
-      ? `Added to demo cart! Size: ${selectedSize}. Return to shopping to view your bag.`
-      : 'Added to your demo cart! Return to the home page to view your bag.';
-  } catch (_) {
-    message.style.color = '#b42318';
-    message.textContent =
-      'Cart could not be updated. Please try again in your browser.';
-  }
-});
+    const category = String(product.category || '').toLowerCase();
+    const title = String(product.title || '').toLowerCase();
+    const isClothing =
+      /women|men|clothing|fashion|apparel|kids/.test(category) ||
+      /kurti|shirt|t-shirt|saree|dress|top|jeans|trouser|legging|palazzo|suit|gown|jacket|blouse|skirt|clothing/.test(title);
+
+    let selectedSize = '';
+    const price = Number(product.price) || 0;
+    const oldPrice = Number(product.oldPrice) || price * 2;
+    const discount = oldPrice > price
+      ? Math.round((oldPrice - price) / oldPrice * 100) : 0;
+
+    root.innerHTML = `
+      <article class="detail-card">
+        <img class="detail-image" src="${esc(product.image || '')}" alt="${esc(product.title)}"
+          onerror="this.style.display='none'">
+        <div class="detail-info">
+          <small>${esc(product.category || 'Collection')}</small>
+          <h1>${esc(product.title || 'Product')}</h1>
+          <div class="detail-price">${money(price)} ${oldPrice > price ? `<del>${money(oldPrice)}</del>` : ''}</div>
+          ${discount ? `<div class="discount">${discount}% off</div>` : ''}
+          <h3>Product Description</h3>
+          <p class="description">${esc(product.description || product.desc || 'A stylish everyday pick at an affordable price.')}</p>
+          <p><b>Category:</b> ${esc(product.category || 'General')}</p>
+          ${isClothing ? `
+            <div class="size-title">Select Size *</div>
+            <div class="size-options">
+              ${['S','M','L','XL','XXL'].map(size => `<button type="button" class="size-btn" data-size="${size}" aria-pressed="false">${size}</button>`).join('')}
+            </div>
+          ` : ''}
+          <button class="primary add" id="addProduct" type="button">Add to Cart</button>
+          <p id="message" role="status" aria-live="polite"></p>
+        </div>
+      </article>`;
+
+    const message = document.getElementById('message');
+
+    document.querySelectorAll('.size-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        selectedSize = button.dataset.size;
+        document.querySelectorAll('.size-btn').forEach(item => {
+          const active = item === button;
+          item.classList.toggle('selected', active);
+          item.setAttribute('aria-pressed', String(active));
+        });
+        message.style.color = '#16833c';
+        message.textContent = 'Selected size: ' + selectedSize;
+      });
+    });
+
+    document.getElementById('addProduct').addEventListener('click', () => {
+      if (isClothing && !selectedSize) {
+        message.style.color = '#b42318';
+        message.textContent = 'Please select a size first.';
+        return;
+      }
+
+      try {
+        let cart = JSON.parse(localStorage.getItem(CART) || '{}');
+        if (!cart || typeof cart !== 'object' || Array.isArray(cart)) cart = {};
+
+        const cartKey = isClothing
+          ? `${product.id}${MARK}${selectedSize}`
+          : String(product.id);
+
+        cart[cartKey] = (Number(cart[cartKey]) || 0) + 1;
+        localStorage.setItem(CART, JSON.stringify(cart));
+
+        message.style.color = '#16833c';
+        message.textContent = isClothing
+          ? `Added to cart — size ${selectedSize}.`
+          : 'Added to your demo cart!';
+      } catch (_) {
+        message.style.color = '#b42318';
+        message.textContent = 'Cart update failed. Please try again.';
+      }
+    });
+  })();
+  </script>
 </body>
 </html>
