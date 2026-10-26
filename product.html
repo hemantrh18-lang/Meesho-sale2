@@ -2,26 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#9f2089">
   <title>Product Details | Meesho Sale</title>
   <link rel="stylesheet" href="./style.css">
   <style>
     .detail-wrap{max-width:1000px;margin:30px auto;padding:0 18px}
-    .back-link{display:inline-block;color:#9f2089;margin-bottom:20px;font-size:14px}
-    .detail-card{display:grid;grid-template-columns:1fr 1fr;gap:35px}
+    .back-link{display:inline-block;color:#9f2089;margin-bottom:20px}
+    .detail-card{display:grid;grid-template-columns:1fr 1fr;gap:30px}
     .detail-image{width:100%;aspect-ratio:4/4.5;object-fit:cover;background:#fff4f9;border-radius:10px}
-    .detail-info h1{font-size:30px;letter-spacing:0;line-height:1.2}
-    .detail-price{font-size:27px;font-weight:bold;margin:18px 0}
+    .detail-info h1{font-size:28px;line-height:1.3}
+    .detail-price{font-size:27px;font-weight:bold;margin:16px 0}
     .detail-price del{font-size:15px;color:#888;font-weight:normal;margin-left:8px}
-    .detail-info p{line-height:1.7;color:#777}
-    .detail-info .add{margin-top:20px;padding:13px}
-    .detail-notice{margin-top:20px;padding:14px;background:#fff4f9;border-radius:8px;font-size:13px;line-height:1.8}
-    @media(max-width:650px){.detail-card{grid-template-columns:1fr;gap:18px}.detail-info h1{font-size:25px}.detail-wrap{margin-top:18px}}
+    .discount{color:#16833c;font-size:14px;font-weight:bold}
+    .description{line-height:1.7;color:#666}
+    .size-title{font-weight:bold;margin:20px 0 10px}
+    .size-options{display:flex;flex-wrap:wrap;gap:10px}
+    .size-btn{border:1px solid #ccc;border-radius:7px;background:white;padding:10px 16px;cursor:pointer}
+    .size-btn.selected{border:2px solid #9f2089;color:#9f2089;background:#fff4fb}
+    .size-btn:focus-visible{outline:2px solid #9f2089}
+    .size-note{font-size:13px;color:#777;margin-top:8px}
+    .detail-info .add{width:100%;margin-top:20px;padding:14px;cursor:pointer}
+    .detail-notice{margin-top:22px;padding:14px;background:#fff4f9;border-radius:8px;font-size:13px;line-height:1.8}
+    #message{color:#16833c;line-height:1.5}
+    @media(max-width:650px){
+      .detail-card{grid-template-columns:1fr;gap:18px}
+      .detail-info h1{font-size:24px}
+      .detail-wrap{margin-top:18px}
+    }
   </style>
 </head>
 <body>
   <div class="top">MEESHO SALE · Everyday deals, lovely prices</div>
+
   <header>
     <a class="brand" href="./index.html">
       <b>M</b><span>Meesho Sale</span>
@@ -31,84 +44,194 @@
       🛍️ Shopping Bag
     </button>
   </header>
+
   <main class="detail-wrap">
     <a class="back-link" href="./index.html">← Back to shopping</a>
     <div id="productDetail">
       <p>Loading product details...</p>
     </div>
+
     <div class="detail-notice">
       <b>Shopping information</b><br>
       • Cash on Delivery is currently unavailable.<br>
       • This is a demo storefront; no real order or payment is processed.<br>
-      • Product availability and prices are sample data.
+      • Prices and availability are sample data.
     </div>
   </main>
+
   <footer>
-    <a class="brand" href="./index.html"><b>M</b><span>Meesho Sale</span></a>
+    <a class="brand" href="./index.html">
+      <b>M</b><span>Meesho Sale</span>
+    </a>
     <p>Affordable finds for everyday living.</p>
     <small>© <span id="year"></span> Meesho Sale Demo</small>
   </footer>
+
   <script>
   (() => {
+    'use strict';
+
     const KEY = 'msSaleProductsV3';
     const CART = 'msSaleCartV3';
+    const SIZES = 'msSaleCartSizesV3';
     const root = document.getElementById('productDetail');
-    document.getElementById('year').textContent = new Date().getFullYear();
+
+    document.getElementById('year').textContent =
+      new Date().getFullYear();
+
+    const escapeHTML = value =>
+      String(value ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[c]));
+
+    const money = value =>
+      '₹' + Number(value || 0).toLocaleString('en-IN');
+
     let products = [];
+
     try {
       products = JSON.parse(localStorage.getItem(KEY) || '[]');
-    } catch (_) {}
+      if (!Array.isArray(products)) products = [];
+    } catch (_) {
+      products = [];
+    }
+
     const id = new URLSearchParams(location.search).get('id');
     const product = products.find(p => String(p.id) === String(id));
-    const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[c]));
-    const money = value => '₹' + Number(value || 0).toLocaleString('en-IN');
+
     if (!product) {
       root.innerHTML = `
         <div class="empty">
           <h2>Product not found</h2>
-          <p>Products are stored in the browser where the demo was used.</p>
+          <p>Open this product from the home page on the same browser.</p>
           <a class="primary" href="./index.html">Browse Products</a>
         </div>`;
       return;
     }
+
+    const category = String(product.category || '').toLowerCase();
+    const title = String(product.title || '').toLowerCase();
+
+    const isClothing =
+      /women|men|clothing|fashion|apparel/.test(category) ||
+      /kurti|shirt|t-shirt|saree|dress|top|jeans|trouser|legging|palazzo|suit|gown|jacket|blouse|skirt/.test(title);
+
+    const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
+    let selectedSize = '';
+
+    const price = Number(product.price) || 0;
+    const oldPrice = Number(product.oldPrice) || price * 2;
+    const discount = oldPrice > price && oldPrice > 0
+      ? Math.round((oldPrice - price) / oldPrice * 100)
+      : 0;
+
+    const description =
+      product.description ||
+      product.desc ||
+      'A stylish everyday pick at an affordable price. Please check the product details before ordering.';
+
     root.innerHTML = `
       <article class="detail-card">
         <img class="detail-image"
           src="${escapeHTML(product.image || '')}"
-          alt="${escapeHTML(product.title)}"
-          onerror="this.style.visibility='hidden'">
+          alt="${escapeHTML(product.title || 'Product')}"
+          onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22450%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23fff4f9%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 fill=%22%239f2089%22 font-size=%2220%22%3EMeesho Sale%3C/text%3E%3C/svg%3E'">
+
         <div class="detail-info">
           <small>${escapeHTML(product.category || 'Collection')}</small>
-          <h1>${escapeHTML(product.title)}</h1>
+          <h1>${escapeHTML(product.title || 'Product')}</h1>
+
           <div class="detail-price">
-            ${money(product.price)}
-            <del>${money(product.oldPrice || product.price * 2)}</del>
+            ${money(price)}
+            ${oldPrice > price ? `<del>${money(oldPrice)}</del>` : ''}
           </div>
-          <p>Discover this pick from our affordable everyday collection.</p>
+
+          ${discount ? `<div class="discount">${discount}% off</div>` : ''}
+
+          <h3>Product Description</h3>
+          <p class="description">${escapeHTML(description)}</p>
+
           <p><b>Category:</b> ${escapeHTML(product.category || 'General')}</p>
-          <p><b>Delivery:</b> Confirm delivery arrangements before placing a real order.</p>
-          <button class="primary" id="addProduct" style="width:100%">
+          <p><b>Delivery:</b> Confirm delivery arrangements before a real order.</p>
+
+          ${isClothing ? `
+            <div class="size-title">Select Size *</div>
+            <div class="size-options" id="sizeOptions">
+              ${sizes.map(size => `
+                <button type="button" class="size-btn"
+                  data-size="${size}" aria-pressed="false">${size}</button>
+              `).join('')}
+            </div>
+            <p class="size-note">Please select your preferred size.</p>
+          ` : ''}
+
+          <button class="primary add" id="addProduct">
             Add to Cart
           </button>
-          <p id="message" role="status"></p>
+          <p id="message" role="status" aria-live="polite"></p>
         </div>
       </article>`;
+
+    const message = document.getElementById('message');
+
+    if (isClothing) {
+      document.querySelectorAll('.size-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          selectedSize = button.dataset.size;
+
+          document.querySelectorAll('.size-btn').forEach(item => {
+            const active = item === button;
+            item.classList.toggle('selected', active);
+            item.setAttribute('aria-pressed', String(active));
+          });
+
+          message.textContent = 'Selected size: ' + selectedSize;
+        });
+      });
+    }
+
     document.getElementById('addProduct').addEventListener('click', () => {
-      let cart = {};
+      if (isClothing && !selectedSize) {
+        message.style.color = '#b42318';
+        message.textContent = 'Please select a size before adding to cart.';
+        return;
+      }
+
       try {
-        cart = JSON.parse(localStorage.getItem(CART) || '{}');
-      } catch (_) {}
-      if (!cart || typeof cart !== 'object' || Array.isArray(cart)) cart = {};
-      cart[product.id] = (Number(cart[product.id]) || 0) + 1;
-      localStorage.setItem(CART, JSON.stringify(cart));
-      document.getElementById('message').textContent =
-        'Added to your demo cart! Return to the home page to view your bag.';
+        let cart = JSON.parse(localStorage.getItem(CART) || '{}');
+
+        if (!cart || typeof cart !== 'object' || Array.isArray(cart)) {
+          cart = {};
+        }
+
+        cart[product.id] = (Number(cart[product.id]) || 0) + 1;
+        localStorage.setItem(CART, JSON.stringify(cart));
+
+        if (isClothing) {
+          let cartSizes = JSON.parse(localStorage.getItem(SIZES) || '{}');
+
+          if (!cartSizes || typeof cartSizes !== 'object' ||
+              Array.isArray(cartSizes)) {
+            cartSizes = {};
+          }
+
+          cartSizes[product.id] = selectedSize;
+          localStorage.setItem(SIZES, JSON.stringify(cartSizes));
+        }
+
+        message.style.color = '#16833c';
+        message.textContent = isClothing
+          ? 'Added to demo cart! Size: ' + selectedSize
+          : 'Added to your demo cart! Return to the home page to view your bag.';
+      } catch (_) {
+        message.style.color = '#b42318';
+        message.textContent =
+          'Cart could not be updated. Please try again in your browser.';
+      }
     });
   })();
   </script>
