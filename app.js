@@ -609,6 +609,58 @@ function renderCart() {
 
     notify('Demo order created');
   });
+  
+  // ADMIN ORDER HISTORY — browser-only demo orders
+  function setupOrderHistory() {
+    const resetButton = $('resetDemo');
+    if (!resetButton) return;
+
+    if (!$('orderHistory')) {
+      resetButton.insertAdjacentHTML('beforebegin', `
+        <section id="orderHistory"
+                 style="margin-top:24px;padding-top:18px;border-top:1px solid #eee">
+          <h3>Demo Order History</h3>
+          <p>Orders saved in this browser only.</p>
+          <button type="button" id="refreshOrderHistory">
+            Refresh Orders
+          </button>
+          <div id="orderHistoryList" style="margin-top:12px"></div>
+        </section>
+      `);
+    }
+
+    function renderOrderHistory() {
+      const orders = parse(
+        localStorage.getItem('msSaleDemoOrdersV1'), []
+      );
+
+      const list = Array.isArray(orders) ? [...orders].reverse() : [];
+
+      $('orderHistoryList').innerHTML = list.length
+        ? list.map(order => `
+            <article style="padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px">
+              <b>Order ID: ${esc(order.orderId)}</b>
+              <p>Status: ${esc(order.status || 'Demo order')}</p>
+              <p>Total: ${money(order.total)}</p>
+              <ul>
+                ${(Array.isArray(order.items) ? order.items : [])
+                  .map(item => `
+                    <li>
+                      ${esc(item.title)} × ${Number(item.quantity) || 0}
+                      ${item.size ? '(Size: ' + esc(item.size) + ')' : ''}
+                    </li>
+                  `).join('')}
+              </ul>
+              <small>Demo record — not a real customer order.</small>
+            </article>
+          `).join('')
+        : '<p>No demo orders saved in this browser yet.</p>';
+    }
+
+    $('refreshOrderHistory').onclick = renderOrderHistory;
+    renderOrderHistory();
+  }
+
   // ADMIN LOGIN
   $('adminOpen').addEventListener('click', () => {
     $('adminTools').hidden = true;
@@ -698,7 +750,7 @@ function renderCart() {
 
   $('year').textContent = new Date().getFullYear();
 
-  setupPriceEditor();
-  render();
-  renderCart();
+      setupPriceEditor();
+    setupOrderHistory();
+    renderPriceEditorOptions();
 })();
