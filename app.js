@@ -117,7 +117,7 @@
     if (sortMode === "high") list.sort((a, b) => b.price - a.price);
 
     container.innerHTML = list.map(p => `
-      <article class="card">
+      <article class="card" data-product="${Number(p.id)}">
         <div class="photo">
           <img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy"
                onerror="this.style.display='none'">
@@ -332,17 +332,159 @@
     if ($("adminCount")) $("adminCount").textContent = productList.length;
   }
 
-  // Product add buttons
+  // PRODUCT DETAILS MODAL
+  function openProductDetails(id) {
+    const p = productList.find(item => item.id === id);
+    if (!p) return;
+
+    let modal = $("productDetailsOverlay");
+
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "productDetailsOverlay";
+      modal.className = "overlay";
+      modal.hidden = true;
+
+      modal.innerHTML = `
+        <section class="modal product-details-modal"
+                 role="dialog" aria-modal="true"
+                 aria-labelledby="productDetailTitle">
+          <div class="panelhead">
+            <div>
+              <small>PRODUCT DETAILS</small>
+              <h2 id="productDetailTitle">Product</h2>
+            </div>
+            <button type="button" id="closeProductDetails"
+                    aria-label="Close details">×</button>
+          </div>
+          <div id="productDetailContent"></div>
+        </section>
+      `;
+
+      document.body.appendChild(modal);
+
+      $("closeProductDetails").addEventListener("click", () => {
+        modal.hidden = true;
+      });
+
+      modal.addEventListener("click", event => {
+        if (event.target === modal) modal.hidden = true;
+      });
+    }
+
+    const hasSizes = ["Women", "Men", "Kids"].includes(p.category);
+
+    $("productDetailTitle").textContent = p.title;
+
+    $("productDetailContent").innerHTML = `
+      <img
+        class="product-detail-image"
+        src="${esc(p.image)}"
+        alt="${esc(p.title)}"
+        onerror="this.style.display='none'"
+      >
+
+      <p class="product-detail-category">${esc(p.category)}</p>
+
+      <div class="prices product-detail-prices">
+        <strong>${money(p.price)}</strong>
+        ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>` : ""}
+      </div>
+
+      <p class="product-detail-description">
+        ${esc(p.description || (
+          p.category === "Women"
+            ? "Discover this stylish pick for your everyday wardrobe and special occasions."
+            : p.category === "Men"
+            ? "A versatile everyday pick designed for your casual style."
+            : p.category === "Kids"
+            ? "A lovely everyday pick for your little one's wardrobe."
+            : p.category === "Beauty"
+            ? "Explore this beauty essential for your daily self-care routine."
+            : p.category === "Home"
+            ? "Add a lovely touch to your home with this everyday pick."
+            : p.category === "Kitchen"
+            ? "A practical everyday essential for your kitchen."
+            : "A stylish everyday essential at a pocket-friendly price."
+        ))}
+      </p>
+
+      ${hasSizes ? `
+        <label class="product-size-label" for="productDetailSize">
+          Select size
+        </label>
+        <select id="productDetailSize" class="product-detail-size">
+          <option value="">Choose a size</option>
+          <option value="S">S</option>
+          <option value="M">M</option>
+          <option value="L">L</option>
+          <option value="XL">XL</option>
+          <option value="XXL">XXL</option>
+        </select>
+      ` : `
+        <p class="muted">Size: Standard</p>
+      `}
+
+      <button class="primary full" type="button"
+              id="detailAddToCart">
+        Add to Cart · ${money(p.price)}
+      </button>
+
+      <p class="muted">Cash on Delivery unavailable.</p>
+    `;
+
+    $("detailAddToCart").addEventListener("click", () => {
+      if (hasSizes && !$("productDetailSize").value) {
+        toast("Please select a size first.");
+        return;
+      }
+
+      const size = hasSizes ? $("productDetailSize").value : "Standard";
+      const found = cart.find(line =>
+        line.id === id && (line.size || "Standard") === size
+      );
+
+      if (found) {
+        found.qty += 1;
+      } else {
+        cart.push({ id, qty: 1, size });
+      }
+
+      saveCart();
+      modal.hidden = true;
+      toast("Product added to cart.");
+    });
+
+    modal.hidden = false;
+  }
+
+  // Product details and Add to Cart click handling
+
+
+  // Product cards: open details or add directly to cart
   $("products")?.addEventListener("click", event => {
-    const button = event.target.closest("[data-add]");
-    if (!button) return;
-    const id = Number(button.dataset.add);
-    const found = cart.find(line => line.id === id);
-    if (found) found.qty += 1;
-    else cart.push({ id, qty: 1 });
-    saveCart();
-    toast("Added to cart.");
+    const addButton = event.target.closest("[data-add]");
+
+    if (addButton) {
+      const id = Number(addButton.dataset.add);
+      const found = cart.find(line =>
+        line.id === id && (line.size || "Standard") === "Standard"
+      );
+
+      if (found) found.qty += 1;
+      else cart.push({ id, qty: 1, size: "Standard" });
+
+      saveCart();
+      toast("Added to cart.");
+      return;
+    }
+
+    const card = event.target.closest("[data-product]");
+    if (!card) return;
+
+    openProductDetails(Number(card.dataset.product));
   });
+
 
   // Category filters
   $("categories")?.addEventListener("click", event => {
