@@ -95,8 +95,6 @@
   function saveCart() {
     write(CART_KEY, cart);
     renderCart();
-
-    // Cart amount changes hone par checkout payment bhi update karo.
     renderCheckoutPayment();
   }
 
@@ -105,7 +103,11 @@
       const product = productList.find(p => p.id === line.id);
 
       return product
-        ? { ...product, qty: Math.max(1, Number(line.qty) || 1) }
+        ? {
+            ...product,
+            qty: Math.max(1, Number(line.qty) || 1),
+            size: line.size || "Standard"
+          }
         : null;
     }).filter(Boolean);
   }
@@ -204,6 +206,7 @@
         <div>
           <b>${esc(p.title)}</b>
           <div>${money(p.price)} each</div>
+          <div>Size: ${esc(p.size)}</div>
 
           <div class="qty">
             <button type="button"
@@ -330,7 +333,6 @@
     });
   }
 
-  // UPDATED: amount-specific UPI link and dynamic QR
   function renderCheckoutPayment() {
     const form = $("checkoutForm");
     if (!form) return;
@@ -363,7 +365,6 @@
       return;
     }
 
-    // UPI app ko current cart total bhejne ke liye "am" parameter.
     const upiLink = upiId
       ? `upi://pay?${new URLSearchParams({
           pa: upiId,
@@ -374,21 +375,17 @@
         }).toString()}`
       : "";
 
-    // UPI ID configured hai to QR mein bhi yahi amount-specific link encode hoga.
-    // QR service ko UPI link/merchant ID/amount mil sakta hai.
     const dynamicQrUrl = upiLink
       ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(upiLink)}`
       : "";
 
-    // Static backup QR sirf tab jab UPI ID configure nahi hai.
     const qrToShow = dynamicQrUrl || backupQrUrl;
 
     area.innerHTML = `
       <h3>Pay using UPI</h3>
 
       <p class="muted">
-        Order amount:
-        <strong>${money(total)}</strong>
+        Order amount: <strong>${money(total)}</strong>
       </p>
 
       <p class="muted">
@@ -402,19 +399,17 @@
 
       ${qrToShow ? `
         <div class="upi-qr-wrap">
-          <img
-            class="upi-qr"
-            src="${esc(qrToShow)}"
-            alt="UPI QR for ${esc(money(total))}"
-            loading="lazy"
-            onerror="
-              this.style.display='none';
-              this.parentElement.querySelector('.qr-error').hidden=false
-            ">
+          <img class="upi-qr"
+               src="${esc(qrToShow)}"
+               alt="UPI QR for ${esc(money(total))}"
+               loading="lazy"
+               onerror="
+                 this.style.display='none';
+                 this.parentElement.querySelector('.qr-error').hidden=false
+               ">
 
           <p class="muted qr-error" hidden>
-            QR could not be loaded. Check your internet connection
-            or the backup QR image URL.
+            QR could not be loaded. Check your connection or QR URL.
           </p>
         </div>
       ` : ""}
@@ -426,22 +421,18 @@
             <span id="merchantUpiText">${esc(upiId)}</span>
           </span>
 
-          <button class="plain"
-                  type="button"
-                  id="copyUpiButton">
+          <button class="plain" type="button" id="copyUpiButton">
             Copy
           </button>
         </div>
 
-        <a class="primary full upi-open"
-           href="${esc(upiLink)}">
+        <a class="primary full upi-open" href="${esc(upiLink)}">
           Open UPI app · ${money(total)}
         </a>
       ` : ""}
 
       <p class="notice">
-        This is a demo checkout. The website does not automatically
-        verify payment. Check the amount and merchant in your UPI app.
+        This is a demo checkout. Payment is not automatically verified.
         Never enter your UPI PIN on this website.
       </p>
 
@@ -473,11 +464,7 @@
           const ok = document.execCommand("copy");
           temp.remove();
 
-          toast(
-            ok
-              ? "UPI ID copied."
-              : "Please copy the UPI ID manually."
-          );
+          toast(ok ? "UPI ID copied." : "Please copy the UPI ID manually.");
         }
       });
     }
@@ -487,6 +474,85 @@
     if ($("adminCount")) {
       $("adminCount").textContent = productList.length;
     }
+  }
+
+  // NEW: Customer orders section inside the admin panel.
+  function renderAdminOrders() {
+    const tools = $("adminTools");
+    if (!tools) return;
+
+    let section = $("adminOrdersSection");
+
+    if (!section) {
+      section = document.createElement("section");
+      section.id = "adminOrdersSection";
+      section.className = "admin-orders";
+      section.style.marginTop = "24px";
+
+      tools.appendChild(section);
+    }
+
+    // Reload saved demo orders from this browser.
+    orders = read(ORDER_KEY, []);
+    if (!Array.isArray(orders)) orders = [];
+
+    if (!orders.length) {
+      section.innerHTML = `
+        <hr>
+        <h3>Customer orders (0)</h3>
+        <p class="muted">
+          No saved demo orders were found in this browser.
+          Complete a checkout test using this same browser and check again.
+        </p>
+      `;
+      return;
+    }
+
+    section.innerHTML = `
+      <hr>
+      <h3>Customer orders (${orders.length})</h3>
+
+      ${orders.slice().reverse().map(order => `
+        <article class="admin-order-card"
+                 style="border:1px solid #ddd;border-radius:10px;padding:12px;margin:12px 0;overflow-wrap:anywhere">
+
+          <p><b>Order ID:</b> ${esc(order.id)}</p>
+          <p><b>Customer:</b> ${esc(order.name)}</p>
+          <p><b>Phone:</b> ${esc(order.phone)}</p>
+          <p><b>Address:</b> ${esc(order.address)}</p>
+
+          <p><b>Products:</b></p>
+
+          <ul>
+            ${(Array.isArray(order.items) ? order.items : []).map(item => `
+              <li>
+                ${esc(item.title)}
+                × ${Math.max(1, Number(item.qty) || 1)}
+                — Size: ${esc(item.size || "Standard")}
+                — ${money((Number(item.price) || 0) * (Number(item.qty) || 1))}
+              </li>
+            `).join("")}
+          </ul>
+
+          <p><b>Total:</b> ${money(order.total)}</p>
+
+          <p>
+            <b>Payment status:</b>
+            ${esc(order.paymentStatus || "Pending manual verification")}
+          </p>
+
+          <p class="muted">
+            Order date:
+            ${esc(
+              order.createdAt &&
+              !Number.isNaN(Date.parse(order.createdAt))
+                ? new Date(order.createdAt).toLocaleString()
+                : "Not available"
+            )}
+          </p>
+        </article>
+      `).join("")}
+    `;
   }
 
   // PRODUCT DETAILS MODAL
@@ -539,11 +605,10 @@
     $("productDetailTitle").textContent = p.title;
 
     $("productDetailContent").innerHTML = `
-      <img
-        class="product-detail-image"
-        src="${esc(p.image)}"
-        alt="${esc(p.title)}"
-        onerror="this.style.display='none'">
+      <img class="product-detail-image"
+           src="${esc(p.image)}"
+           alt="${esc(p.title)}"
+           onerror="this.style.display='none'">
 
       <p class="product-detail-category">${esc(p.category)}</p>
 
@@ -587,9 +652,7 @@
         <p class="muted">Size: Standard</p>
       `}
 
-      <button class="primary full"
-              type="button"
-              id="detailAddToCart">
+      <button class="primary full" type="button" id="detailAddToCart">
         Add to Cart · ${money(p.price)}
       </button>
 
@@ -697,23 +760,31 @@
     renderProducts();
   });
 
-  // Cart quantity controls
+  // Cart quantity controls, including products with different sizes.
   $("cartItems")?.addEventListener("click", event => {
     const qtyButton = event.target.closest("[data-qty]");
     const removeButton = event.target.closest("[data-remove]");
 
     if (removeButton) {
       const id = Number(removeButton.dataset.remove);
-      cart = cart.filter(line => line.id !== id);
+      const size = removeButton.dataset.size || "Standard";
+
+      cart = cart.filter(line =>
+        !(line.id === id && (line.size || "Standard") === size)
+      );
+
       saveCart();
       return;
     }
 
     if (qtyButton) {
       const id = Number(qtyButton.dataset.qty);
+      const size = qtyButton.dataset.size || "Standard";
 
-      // Find the visible product line.
-      const line = cart.find(item => item.id === id);
+      const line = cart.find(item =>
+        item.id === id && (item.size || "Standard") === size
+      );
+
       if (!line) return;
 
       line.qty += Number(qtyButton.dataset.change);
@@ -765,7 +836,6 @@
     if ($("checkoutResult")) $("checkoutResult").hidden = true;
     if ($("checkoutForm")) $("checkoutForm").hidden = false;
 
-    // Har baar checkout kholne par current cart total se QR/link banao.
     renderCheckoutPayment();
     openOverlay("checkoutOverlay");
   });
@@ -838,7 +908,6 @@
         saveCart();
 
         closeOverlay("checkoutOverlay");
-
         if (result) result.hidden = true;
 
         event.currentTarget.reset();
@@ -849,7 +918,7 @@
     $("checkoutForm").hidden = true;
   });
 
-  // Admin PIN gate: demo only, not secure for a live store
+  // Admin PIN gate: demo only, not secure for a live store.
   $("adminForm")?.addEventListener("submit", event => {
     event.preventDefault();
 
@@ -864,6 +933,7 @@
 
     renderAdminCount();
     renderPaymentAdmin();
+    renderAdminOrders();
 
     toast("Demo admin tools opened.");
   });
