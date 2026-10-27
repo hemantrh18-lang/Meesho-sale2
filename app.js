@@ -1,6 +1,8 @@
 
 (() => {
-  "  const SUPABASE_URL = "https://uttemuesgazjillliimo.supabase.co";
+  "use strict";
+
+  const SUPABASE_URL = "https://uttemuesgazjillliimo.supabase.co";
   const SUPABASE_KEY = "sb_publishable_EJfp_-l9jErxOBI_ykUOZg_zZOfyk_7";
 
   async function supabaseRequest(table, options = {}) {
@@ -25,7 +27,9 @@
     }
 
     return text ? JSON.parse(text) : [];
-  }use strict";
+  }
+
+  const PRODUCT_KEY = "msSaleProductsV3";
 
   const PRODUCT_KEY = "msSaleProductsV3";
   const CART_KEY = "msSaleCartV3";
