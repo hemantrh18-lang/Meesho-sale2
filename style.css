@@ -290,3 +290,340 @@ footer small{margin-left:0}
     margin-bottom: 16px;
     background: white;
   }
+
+/* ===== Meesho Sale: Professional UI Upgrade ===== */
+
+:root {
+  --brand: #9f2089;
+  --pink: #e80071;
+  --ink: #302b30;
+  --muted: #77717a;
+  --line: #f0e7ee;
+  --soft: #fff4f9;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: #fff;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.top {
+  text-align: center;
+  letter-spacing: 0.2px;
+  font-weight: 600;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+header {
+  box-shadow: 0 3px 14px rgba(48, 25, 43, 0.035);
+}
+
+.brand {
+  letter-spacing: -0.5px;
+}
+
+.brand b {
+  box-shadow: 0 3px 9px rgba(159, 32, 137, 0.18);
+}
+
+.search {
+  background: #faf8fa;
+  border-color: #e9e0e8;
+  border-radius: 9px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search:focus-within {
+  background: white;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(159, 32, 137, 0.09);
+}
+
+.search input {
+  background: transparent;
+}
+
+.cart {
+  border-radius: 8px;
+}
+
+.cart:hover,
+.plain:hover {
+  background: var(--soft);
+  color: var(--brand);
+}
+
+.hero {
+  position: relative;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.95), transparent 25%),
+    linear-gradient(120deg, #fff2f8 0%, #f8e0f1 55%, #f5e7ff 100%);
+  border: 1px solid #f4dfec;
+  box-shadow: 0 12px 35px rgba(100, 34, 85, 0.055);
+}
+
+.hero h1 {
+  letter-spacing: -2.3px;
+}
+
+.primary {
+  border-radius: 8px;
+  box-shadow: 0 5px 13px rgba(159, 32, 137, 0.17);
+}
+
+.primary:hover {
+  background: #86166f;
+  box-shadow: 0 7px 17px rgba(159, 32, 137, 0.24);
+  transform: translateY(-1px);
+}
+
+.sticker {
+  border: 3px solid rgba(255, 255, 255, 0.8);
+}
+
+.benefits {
+  background: #fff;
+  box-shadow: 0 6px 22px rgba(48, 25, 43, 0.035);
+}
+
+.heading h2,
+.closing h2 {
+  letter-spacing: -0.7px;
+}
+
+nav button {
+  transition: all 0.2s ease;
+}
+
+nav button.active {
+  box-shadow: 0 4px 10px rgba(159, 32, 137, 0.17);
+}
+
+.tools select {
+  cursor: pointer;
+  outline-color: var(--brand);
+}
+
+.card {
+  background: white;
+  border-color: #eee6ed;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(42, 24, 39, 0.025);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+}
+
+.photo {
+  background: linear-gradient(145deg, #fbf4f9, #f7edf5);
+  overflow: hidden;
+}
+
+.photo img {
+  transition: transform 0.35s ease;
+}
+
+.tag {
+  border: 1px solid rgba(159, 32, 137, 0.08);
+  box-shadow: 0 2px 6px rgba(30, 10, 25, 0.05);
+}
+
+.heart {
+  box-shadow: 0 2px 8px rgba(30, 10, 25, 0.08);
+}
+
+.info h3 {
+  color: #3c343c;
+}
+
+.prices strong {
+  color: #262026;
+  letter-spacing: -0.3px;
+}
+
+.add {
+  border-radius: 7px;
+  padding: 10px 8px;
+  background: #fff;
+}
+
+.add:hover {
+  box-shadow: 0 4px 10px rgba(159, 32, 137, 0.12);
+}
+
+.closing {
+  border: 1px solid #f4e0ed;
+  background:
+    radial-gradient(circle at 100% 0%, #f9e2f1, transparent 40%),
+    #fff5fa;
+}
+
+footer {
+  background: #fffafd;
+}
+
+.panel,
+.modal {
+  box-shadow: -8px 0 35px rgba(28, 13, 25, 0.09);
+}
+
+.modal {
+  border: 1px solid #f1e7ef;
+  box-shadow: 0 18px 55px rgba(28, 13, 25, 0.2);
+}
+
+.modal input:focus,
+.modal textarea:focus,
+.modal select:focus {
+  outline: 2px solid rgba(159, 32, 137, 0.18);
+  border-color: var(--brand);
+}
+
+.upi-payment {
+  box-shadow: 0 4px 14px rgba(48, 25, 43, 0.035);
+}
+
+.product-detail-image {
+  border: 1px solid #f1e7ef;
+}
+
+/* Tablet layout */
+@media (min-width: 601px) and (max-width: 1000px) {
+  .hero,
+  .benefits,
+  .shop,
+  .closing {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 13px;
+  }
+}
+
+/* Mobile shopping experience */
+@media (max-width: 600px) {
+  .top {
+    font-size: 11px;
+    padding: 9px 8px;
+  }
+
+  header {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .brand {
+    font-size: 19px;
+  }
+
+  .search {
+    border-radius: 8px;
+  }
+
+  .hero {
+    border-radius: 13px;
+    box-shadow: 0 6px 18px rgba(100, 34, 85, 0.055);
+  }
+
+  .hero h1 {
+    letter-spacing: -1.7px;
+  }
+
+  .benefits {
+    border-radius: 10px;
+    box-shadow: none;
+  }
+
+  .heading {
+    gap: 8px;
+  }
+
+  .heading h2 {
+    font-size: 22px;
+  }
+
+  .grid {
+    gap: 10px;
+  }
+
+  .card {
+    border-radius: 10px;
+  }
+
+  .photo {
+    aspect-ratio: 4 / 4.7;
+  }
+
+  .info {
+    padding: 9px;
+  }
+
+  .info h3 {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .prices {
+    gap: 5px;
+  }
+
+  .prices strong {
+    font-size: 15px;
+  }
+
+  .add {
+    min-height: 37px;
+    font-size: 11px;
+  }
+
+  .closing {
+    border-radius: 12px;
+  }
+
+  .toast {
+    bottom: 16px;
+    width: max-content;
+    max-width: calc(100% - 24px);
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
