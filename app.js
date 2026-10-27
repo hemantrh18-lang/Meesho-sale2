@@ -1160,5 +1160,12 @@
   renderProducts();
   updateCartCount();
   loadSupabaseProducts();
-
+document.getElementById("adminOpen")?.addEventListener("click", () => {
+  const pin = prompt("Demo admin PIN enter karein:");
+  if (pin === "2468") {
+    alert("Admin button ka click kaam kar raha hai. Ab panel integration fix karenge.");
+  } else if (pin !== null) {
+    alert("PIN incorrect.");
+  }
+});
 })();
