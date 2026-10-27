@@ -1,6 +1,31 @@
 
 (() => {
-  "use strict";
+  "  const SUPABASE_URL = "https://uttemuesgazjillliimo.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_EJfp_-l9jErxOBI_ykUOZg_zZOfyk_7";
+
+  async function supabaseRequest(table, options = {}) {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/${table}`,
+      {
+        method: options.method || "GET",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: options.prefer || "return=representation"
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined
+      }
+    );
+
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(`Supabase ${response.status}: ${text}`);
+    }
+
+    return text ? JSON.parse(text) : [];
+  }use strict";
 
   const PRODUCT_KEY = "msSaleProductsV3";
   const CART_KEY = "msSaleCartV3";
