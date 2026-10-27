@@ -47,8 +47,11 @@
 
   function esc(value) {
     return String(value ?? "").replace(/[&<>"']/g, ch => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;",
-      '"': "&quot;", "'": "&#39;"
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
     })[ch]);
   }
 
@@ -78,26 +81,40 @@
   function toast(message) {
     const el = $("toast");
     if (!el) return;
+
     el.textContent = message;
     el.classList.add("show");
+
     clearTimeout(toast.timer);
-    toast.timer = setTimeout(() => el.classList.remove("show"), 2600);
+    toast.timer = setTimeout(
+      () => el.classList.remove("show"),
+      2600
+    );
   }
 
   function saveCart() {
     write(CART_KEY, cart);
     renderCart();
+
+    // Cart amount changes hone par checkout payment bhi update karo.
+    renderCheckoutPayment();
   }
 
   function getCartLines() {
     return cart.map(line => {
       const product = productList.find(p => p.id === line.id);
-      return product ? { ...product, qty: Math.max(1, Number(line.qty) || 1) } : null;
+
+      return product
+        ? { ...product, qty: Math.max(1, Number(line.qty) || 1) }
+        : null;
     }).filter(Boolean);
   }
 
   function cartTotal() {
-    return getCartLines().reduce((sum, p) => sum + p.price * p.qty, 0);
+    return getCartLines().reduce(
+      (sum, p) => sum + Number(p.price) * p.qty,
+      0
+    );
   }
 
   function renderProducts() {
@@ -105,39 +122,61 @@
     if (!container) return;
 
     let list = productList.filter(p => {
-      const matchesCategory = activeCategory === "All" || p.category === activeCategory;
+      const matchesCategory =
+        activeCategory === "All" || p.category === activeCategory;
+
       const term = searchText.toLowerCase();
+
       const matchesSearch = !term ||
         p.title.toLowerCase().includes(term) ||
         p.category.toLowerCase().includes(term);
+
       return matchesCategory && matchesSearch;
     });
 
-    if (sortMode === "low") list.sort((a, b) => a.price - b.price);
-    if (sortMode === "high") list.sort((a, b) => b.price - a.price);
+    if (sortMode === "low") {
+      list.sort((a, b) => a.price - b.price);
+    }
+
+    if (sortMode === "high") {
+      list.sort((a, b) => b.price - a.price);
+    }
 
     container.innerHTML = list.map(p => `
       <article class="card" data-product="${Number(p.id)}">
         <div class="photo">
-          <img src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy"
+          <img src="${esc(p.image)}"
+               alt="${esc(p.title)}"
+               loading="lazy"
                onerror="this.style.display='none'">
           <span class="tag">${esc(p.tag || "DEAL")}</span>
         </div>
+
         <div class="info">
           <h3>${esc(p.title)}</h3>
+
           <div class="prices">
             <strong>${money(p.price)}</strong>
             ${p.oldPrice ? `<del>${money(p.oldPrice)}</del>` : ""}
           </div>
-          <button class="add" type="button" data-add="${Number(p.id)}">Add to cart</button>
+
+          <button class="add"
+                  type="button"
+                  data-add="${Number(p.id)}">
+            Add to cart
+          </button>
         </div>
       </article>
     `).join("");
 
     if ($("resultCount")) {
-      $("resultCount").textContent = `${list.length} product${list.length === 1 ? "" : "s"}`;
+      $("resultCount").textContent =
+        `${list.length} product${list.length === 1 ? "" : "s"}`;
     }
-    if ($("empty")) $("empty").hidden = list.length > 0;
+
+    if ($("empty")) {
+      $("empty").hidden = list.length > 0;
+    }
   }
 
   function renderCart() {
@@ -151,23 +190,40 @@
     if (!target) return;
 
     if (!lines.length) {
-      target.innerHTML = '<p class="muted">Your cart is empty. Add a product to get started.</p>';
+      target.innerHTML =
+        '<p class="muted">Your cart is empty. Add a product to get started.</p>';
       return;
     }
 
     target.innerHTML = lines.map(p => `
       <div class="cartline">
-        <img class="thumb" src="${esc(p.image)}" alt="${esc(p.title)}">
+        <img class="thumb"
+             src="${esc(p.image)}"
+             alt="${esc(p.title)}">
+
         <div>
           <b>${esc(p.title)}</b>
           <div>${money(p.price)} each</div>
+
           <div class="qty">
-            <button type="button" data-qty="${p.id}" data-change="-1" aria-label="Decrease quantity">−</button>
+            <button type="button"
+                    data-qty="${p.id}"
+                    data-change="-1"
+                    aria-label="Decrease quantity">−</button>
+
             <span>${p.qty}</span>
-            <button type="button" data-qty="${p.id}" data-change="1" aria-label="Increase quantity">+</button>
-            <button type="button" data-remove="${p.id}">Remove</button>
+
+            <button type="button"
+                    data-qty="${p.id}"
+                    data-change="1"
+                    aria-label="Increase quantity">+</button>
+
+            <button type="button" data-remove="${p.id}">
+              Remove
+            </button>
           </div>
         </div>
+
         <b>${money(p.price * p.qty)}</b>
       </div>
     `).join("");
@@ -189,36 +245,59 @@
 
     const section = document.createElement("section");
     section.className = "payment-admin";
+
     section.innerHTML = `
       <hr>
       <h3>UPI payment settings</h3>
-      <p class="muted">Set the UPI ID and QR image customers will see at checkout.</p>
+
+      <p class="muted">
+        Set the merchant UPI ID and optional backup QR image.
+        When a UPI ID is set, checkout generates an amount-specific QR.
+      </p>
+
       <form id="paymentSettingsForm">
         <label>
           Merchant UPI ID
-          <input name="upiId" value="${esc(payment.upiId)}"
-                 placeholder="yourmerchant@upi" autocomplete="off">
+          <input name="upiId"
+                 value="${esc(payment.upiId)}"
+                 placeholder="yourmerchant@upi"
+                 autocomplete="off">
         </label>
+
         <label>
           Display name (optional)
-          <input name="payeeName" value="${esc(payment.payeeName)}"
-                 placeholder="Store / merchant name" autocomplete="off">
+          <input name="payeeName"
+                 value="${esc(payment.payeeName)}"
+                 placeholder="Store / merchant name"
+                 autocomplete="off">
         </label>
+
         <label>
-          QR code image URL
-          <input name="qrUrl" type="url" value="${esc(payment.qrUrl)}"
+          Backup QR code image URL (optional)
+          <input name="qrUrl"
+                 type="url"
+                 value="${esc(payment.qrUrl)}"
                  placeholder="https://.../your-qr.png">
         </label>
-        <button class="primary full" type="submit">Save payment settings</button>
+
+        <button class="primary full" type="submit">
+          Save payment settings
+        </button>
       </form>
-      <p class="muted">These settings save only in this browser. Do not enter bank passwords, UPI PINs or OTPs here.</p>
+
+      <p class="muted">
+        These settings save only in this browser. Do not enter
+        bank passwords, UPI PINs or OTPs here.
+      </p>
     `;
 
     tools.appendChild(section);
 
     $("paymentSettingsForm").addEventListener("submit", event => {
       event.preventDefault();
+
       const data = new FormData(event.currentTarget);
+
       const upiId = String(data.get("upiId") || "").trim();
       const payeeName = String(data.get("payeeName") || "").trim();
       const qrUrl = String(data.get("qrUrl") || "").trim();
@@ -231,6 +310,7 @@
       if (qrUrl) {
         try {
           const url = new URL(qrUrl);
+
           if (url.protocol !== "https:" && url.protocol !== "http:") {
             toast("Use a valid HTTP or HTTPS QR image URL.");
             return;
@@ -242,74 +322,143 @@
       }
 
       payment = { upiId, payeeName, qrUrl };
+
       write(PAYMENT_KEY, payment);
+
       toast("Payment settings saved in this browser.");
       renderCheckoutPayment();
     });
   }
 
+  // UPDATED: amount-specific UPI link and dynamic QR
   function renderCheckoutPayment() {
     const form = $("checkoutForm");
     if (!form) return;
 
     let area = $("upiPaymentArea");
+
     if (!area) {
       area = document.createElement("section");
       area.id = "upiPaymentArea";
       area.className = "upi-payment";
+
       const submit = form.querySelector('[type="submit"]');
       form.insertBefore(area, submit || null);
     }
 
     const upiId = String(payment.upiId || "").trim();
     const payee = String(payment.payeeName || "").trim();
-    const qrUrl = String(payment.qrUrl || "").trim();
+    const backupQrUrl = String(payment.qrUrl || "").trim();
 
-    if (!upiId && !qrUrl) {
+    const total = cartTotal();
+
+    if (!upiId && !backupQrUrl) {
       area.innerHTML = `
         <h3>Online payment</h3>
-        <p class="muted">The store has not configured its UPI ID or QR code yet.</p>
+        <p class="muted">
+          The store has not configured its UPI ID or QR code yet.
+        </p>
         <p><b>Cash on Delivery is unavailable.</b></p>
       `;
       return;
     }
 
+    // UPI app ko current cart total bhejne ke liye "am" parameter.
     const upiLink = upiId
       ? `upi://pay?${new URLSearchParams({
           pa: upiId,
           pn: payee || "Meesho Sale",
+          am: total.toFixed(2),
           cu: "INR",
           tn: "Meesho Sale order"
         }).toString()}`
       : "";
 
+    // UPI ID configured hai to QR mein bhi yahi amount-specific link encode hoga.
+    // QR service ko UPI link/merchant ID/amount mil sakta hai.
+    const dynamicQrUrl = upiLink
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(upiLink)}`
+      : "";
+
+    // Static backup QR sirf tab jab UPI ID configure nahi hai.
+    const qrToShow = dynamicQrUrl || backupQrUrl;
+
     area.innerHTML = `
       <h3>Pay using UPI</h3>
-      <p class="muted">Scan the merchant QR with your UPI app, or copy the UPI ID.</p>
-      ${payee ? `<p>Store display name: <b>${esc(payee)}</b></p>` : ""}
-      ${qrUrl ? `
+
+      <p class="muted">
+        Order amount:
+        <strong>${money(total)}</strong>
+      </p>
+
+      <p class="muted">
+        Scan this QR with a UPI app or open the UPI payment link.
+        Confirm the amount in your UPI app before paying.
+      </p>
+
+      ${payee
+        ? `<p>Store display name: <b>${esc(payee)}</b></p>`
+        : ""}
+
+      ${qrToShow ? `
         <div class="upi-qr-wrap">
-          <img class="upi-qr" src="${esc(qrUrl)}" alt="Merchant UPI QR code"
-               onerror="this.style.display='none';this.parentElement.querySelector('.qr-error').hidden=false">
-          <p class="muted qr-error" hidden>QR image could not be loaded. Check the image URL.</p>
-        </div>` : ""}
+          <img
+            class="upi-qr"
+            src="${esc(qrToShow)}"
+            alt="UPI QR for ${esc(money(total))}"
+            loading="lazy"
+            onerror="
+              this.style.display='none';
+              this.parentElement.querySelector('.qr-error').hidden=false
+            ">
+
+          <p class="muted qr-error" hidden>
+            QR could not be loaded. Check your internet connection
+            or the backup QR image URL.
+          </p>
+        </div>
+      ` : ""}
+
       ${upiId ? `
         <div class="upi-id-line">
-          <span><b>UPI ID:</b> <span id="merchantUpiText">${esc(upiId)}</span></span>
-          <button class="plain" type="button" id="copyUpiButton">Copy</button>
+          <span>
+            <b>UPI ID:</b>
+            <span id="merchantUpiText">${esc(upiId)}</span>
+          </span>
+
+          <button class="plain"
+                  type="button"
+                  id="copyUpiButton">
+            Copy
+          </button>
         </div>
-        <a class="primary full upi-open" href="${esc(upiLink)}">Open UPI app</a>
+
+        <a class="primary full upi-open"
+           href="${esc(upiLink)}">
+          Open UPI app · ${money(total)}
+        </a>
       ` : ""}
-      <p class="notice">After paying, keep your UPI app receipt. This website does not automatically verify payment. Do not enter your UPI PIN on this website.</p>
+
+      <p class="notice">
+        This is a demo checkout. The website does not automatically
+        verify payment. Check the amount and merchant in your UPI app.
+        Never enter your UPI PIN on this website.
+      </p>
+
       <label class="payment-confirm-label">
         <input type="checkbox" id="paymentMadeCheck">
         I have made the payment (this checkbox is not payment verification).
       </label>
-      <p class="muted">Payment status: <b>Pending manual verification</b></p>
+
+      <p class="muted">
+        Payment status: <b>Pending manual verification</b>
+      </p>
+
       <p><b>Cash on Delivery is unavailable.</b></p>
     `;
 
     const copyButton = $("copyUpiButton");
+
     if (copyButton) {
       copyButton.addEventListener("click", async () => {
         try {
@@ -320,16 +469,24 @@
           temp.value = upiId;
           document.body.appendChild(temp);
           temp.select();
+
           const ok = document.execCommand("copy");
           temp.remove();
-          toast(ok ? "UPI ID copied." : "Please copy the UPI ID manually.");
+
+          toast(
+            ok
+              ? "UPI ID copied."
+              : "Please copy the UPI ID manually."
+          );
         }
       });
     }
   }
 
   function renderAdminCount() {
-    if ($("adminCount")) $("adminCount").textContent = productList.length;
+    if ($("adminCount")) {
+      $("adminCount").textContent = productList.length;
+    }
   }
 
   // PRODUCT DETAILS MODAL
@@ -347,16 +504,21 @@
 
       modal.innerHTML = `
         <section class="modal product-details-modal"
-                 role="dialog" aria-modal="true"
+                 role="dialog"
+                 aria-modal="true"
                  aria-labelledby="productDetailTitle">
+
           <div class="panelhead">
             <div>
               <small>PRODUCT DETAILS</small>
               <h2 id="productDetailTitle">Product</h2>
             </div>
-            <button type="button" id="closeProductDetails"
+
+            <button type="button"
+                    id="closeProductDetails"
                     aria-label="Close details">×</button>
           </div>
+
           <div id="productDetailContent"></div>
         </section>
       `;
@@ -381,8 +543,7 @@
         class="product-detail-image"
         src="${esc(p.image)}"
         alt="${esc(p.title)}"
-        onerror="this.style.display='none'"
-      >
+        onerror="this.style.display='none'">
 
       <p class="product-detail-category">${esc(p.category)}</p>
 
@@ -413,6 +574,7 @@
         <label class="product-size-label" for="productDetailSize">
           Select size
         </label>
+
         <select id="productDetailSize" class="product-detail-size">
           <option value="">Choose a size</option>
           <option value="S">S</option>
@@ -425,7 +587,8 @@
         <p class="muted">Size: Standard</p>
       `}
 
-      <button class="primary full" type="button"
+      <button class="primary full"
+              type="button"
               id="detailAddToCart">
         Add to Cart · ${money(p.price)}
       </button>
@@ -439,9 +602,13 @@
         return;
       }
 
-      const size = hasSizes ? $("productDetailSize").value : "Standard";
+      const size = hasSizes
+        ? $("productDetailSize").value
+        : "Standard";
+
       const found = cart.find(line =>
-        line.id === id && (line.size || "Standard") === size
+        line.id === id &&
+        (line.size || "Standard") === size
       );
 
       if (found) {
@@ -458,21 +625,23 @@
     modal.hidden = false;
   }
 
-  // Product details and Add to Cart click handling
-
-
-  // Product cards: open details or add directly to cart
+  // Product cards and Add to Cart
   $("products")?.addEventListener("click", event => {
     const addButton = event.target.closest("[data-add]");
 
     if (addButton) {
       const id = Number(addButton.dataset.add);
+
       const found = cart.find(line =>
-        line.id === id && (line.size || "Standard") === "Standard"
+        line.id === id &&
+        (line.size || "Standard") === "Standard"
       );
 
-      if (found) found.qty += 1;
-      else cart.push({ id, qty: 1, size: "Standard" });
+      if (found) {
+        found.qty += 1;
+      } else {
+        cart.push({ id, qty: 1, size: "Standard" });
+      }
 
       saveCart();
       toast("Added to cart.");
@@ -485,15 +654,17 @@
     openProductDetails(Number(card.dataset.product));
   });
 
-
   // Category filters
   $("categories")?.addEventListener("click", event => {
     const button = event.target.closest("[data-cat]");
     if (!button) return;
+
     activeCategory = button.dataset.cat;
-    $("categories").querySelectorAll("[data-cat]").forEach(el =>
-      el.classList.toggle("active", el === button)
-    );
+
+    $("categories").querySelectorAll("[data-cat]").forEach(el => {
+      el.classList.toggle("active", el === button);
+    });
+
     renderProducts();
   });
 
@@ -516,10 +687,13 @@
   $("reset")?.addEventListener("click", () => {
     activeCategory = "All";
     searchText = "";
+
     if ($("search")) $("search").value = "";
-    $("categories")?.querySelectorAll("[data-cat]").forEach(el =>
-      el.classList.toggle("active", el.dataset.cat === "All")
-    );
+
+    $("categories")?.querySelectorAll("[data-cat]").forEach(el => {
+      el.classList.toggle("active", el.dataset.cat === "All");
+    });
+
     renderProducts();
   });
 
@@ -529,26 +703,41 @@
     const removeButton = event.target.closest("[data-remove]");
 
     if (removeButton) {
-      cart = cart.filter(line => line.id !== Number(removeButton.dataset.remove));
+      const id = Number(removeButton.dataset.remove);
+      cart = cart.filter(line => line.id !== id);
       saveCart();
       return;
     }
 
     if (qtyButton) {
       const id = Number(qtyButton.dataset.qty);
+
+      // Find the visible product line.
       const line = cart.find(item => item.id === id);
       if (!line) return;
+
       line.qty += Number(qtyButton.dataset.change);
-      if (line.qty <= 0) cart = cart.filter(item => item.id !== id);
+
+      if (line.qty <= 0) {
+        cart = cart.filter(item => item !== line);
+      }
+
       saveCart();
     }
   });
 
-  $("cartOpen")?.addEventListener("click", () => openOverlay("cartOverlay"));
-  $("adminOpen")?.addEventListener("click", () => openOverlay("adminOverlay"));
+  $("cartOpen")?.addEventListener("click", () => {
+    openOverlay("cartOverlay");
+  });
+
+  $("adminOpen")?.addEventListener("click", () => {
+    openOverlay("adminOverlay");
+  });
 
   document.querySelectorAll("[data-close]").forEach(button => {
-    button.addEventListener("click", () => closeOverlay(button.dataset.close));
+    button.addEventListener("click", () => {
+      closeOverlay(button.dataset.close);
+    });
   });
 
   document.querySelectorAll(".overlay").forEach(overlay => {
@@ -559,7 +748,9 @@
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
-      document.querySelectorAll(".overlay").forEach(el => el.hidden = true);
+      document.querySelectorAll(".overlay").forEach(el => {
+        el.hidden = true;
+      });
     }
   });
 
@@ -568,9 +759,13 @@
       toast("Your cart is empty.");
       return;
     }
+
     closeOverlay("cartOverlay");
+
     if ($("checkoutResult")) $("checkoutResult").hidden = true;
     if ($("checkoutForm")) $("checkoutForm").hidden = false;
+
+    // Har baar checkout kholne par current cart total se QR/link banao.
     renderCheckoutPayment();
     openOverlay("checkoutOverlay");
   });
@@ -589,14 +784,21 @@
     }
 
     const formData = new FormData(event.currentTarget);
+
     const order = {
       id: "MS" + Date.now(),
       name: String(formData.get("name") || "").trim(),
       phone: String(formData.get("phone") || "").trim(),
       address: String(formData.get("address") || "").trim(),
+
       items: getCartLines().map(p => ({
-        id: p.id, title: p.title, price: p.price, qty: p.qty
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        qty: p.qty,
+        size: p.size || "Standard"
       })),
+
       total: cartTotal(),
       paymentStatus: "Pending manual verification",
       createdAt: new Date().toISOString()
@@ -606,8 +808,10 @@
     write(ORDER_KEY, orders);
 
     const result = $("checkoutResult");
+
     if (result) {
       result.hidden = false;
+
       result.innerHTML = `
         <div class="notice">
           <b>Order preview saved.</b><br>
@@ -616,44 +820,67 @@
           Payment status: <b>Pending manual verification</b><br>
           This demo does not verify payments or send a real delivery order.
         </div>
-        <p>Complete the UPI payment using the QR code or UPI ID above. The store must verify the payment separately.</p>
-        <button class="primary full" type="button" id="finishDemoOrder">Finish demo</button>
+
+        <p>
+          Complete the UPI payment using the amount-specific QR or UPI link.
+          The store must verify the payment separately.
+        </p>
+
+        <button class="primary full"
+                type="button"
+                id="finishDemoOrder">
+          Finish demo
+        </button>
       `;
+
       $("finishDemoOrder")?.addEventListener("click", () => {
         cart = [];
         saveCart();
+
         closeOverlay("checkoutOverlay");
+
         if (result) result.hidden = true;
+
         event.currentTarget.reset();
         toast("Demo order finished.");
       });
     }
 
-    if ($("checkoutForm")) $("checkoutForm").hidden = true;
+    $("checkoutForm").hidden = true;
   });
 
-  // Admin PIN gate (browser-side demo only; not secure for a live store)
+  // Admin PIN gate: demo only, not secure for a live store
   $("adminForm")?.addEventListener("submit", event => {
     event.preventDefault();
+
     const data = new FormData(event.currentTarget);
+
     if (String(data.get("pin")) !== "2468") {
       toast("Incorrect demo PIN.");
       return;
     }
 
     $("adminTools").hidden = false;
+
     renderAdminCount();
     renderPaymentAdmin();
+
     toast("Demo admin tools opened.");
   });
 
   $("addForm")?.addEventListener("submit", event => {
     event.preventDefault();
+
     const data = new FormData(event.currentTarget);
     const title = String(data.get("title") || "").trim();
+
     if (!title) return;
 
-    const id = productList.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+    const id = productList.reduce(
+      (max, p) => Math.max(max, Number(p.id) || 0),
+      0
+    ) + 1;
+
     productList.push({
       id,
       title,
@@ -665,32 +892,43 @@
     });
 
     write(PRODUCT_KEY, productList);
+
     event.currentTarget.reset();
+
     renderProducts();
     renderAdminCount();
+
     toast("Product added in this browser.");
   });
 
   $("resetDemo")?.addEventListener("click", () => {
     if (!confirm("Reset demo products to the original list?")) return;
+
     productList = defaults.map(p => ({ ...p }));
+
     write(PRODUCT_KEY, productList);
+
     renderProducts();
     renderAdminCount();
+
     toast("Demo products reset.");
   });
 
-  if ($("year")) $("year").textContent = new Date().getFullYear();
+  if ($("year")) {
+    $("year").textContent = new Date().getFullYear();
+  }
 
   // Initial render
   renderProducts();
   renderCart();
 
-  // Keep checkout wording accurate and add payment UI.
-  const checkoutNotice = document.querySelector("#checkoutOverlay .notice");
+  const checkoutNotice =
+    document.querySelector("#checkoutOverlay .notice");
+
   if (checkoutNotice) {
     checkoutNotice.textContent =
-      "UPI payment details are displayed below when configured. Payments are not automatically verified and orders are demo-only.";
+      "UPI payment details are displayed below when configured. " +
+      "Payments are not automatically verified and orders are demo-only.";
   }
 
   renderCheckoutPayment();
